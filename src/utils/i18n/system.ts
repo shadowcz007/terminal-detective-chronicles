@@ -1,85 +1,67 @@
 
 export const systemTranslations = {
   zh: {
-    // 系统消息
     systemInit: `
-===============================================================================
-                          █████╗ ██╗     ███████╗██████╗ 
-                         ██╔══██╗██║     ██╔════╝██╔══██╗
-                         ███████║██║     █████╗  ██║  ██║
-                         ██╔══██║██║     ██╔══╝  ██║  ██║
-                         ██║  ██║███████╗███████╗██████╔╝
-                         ╚═╝  ╚═╝╚══════╝╚══════╝╚═════╝ 
-===============================================================================
-AI 侦探终端 v2.1.5 | 当前案件ID: #{{caseId}}
--------------------------------------------------------------------------------
-系统初始化完成... 
-{{apiStatus}}
+████████╗███████╗███╗   ███╗██████╗  ██████╗ ██████╗  █████╗ ██╗     
+╚══██╔══╝██╔════╝████╗ ████║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗██║     
+   ██║   █████╗  ██╔████╔██║██████╔╝██║   ██║██████╔╝███████║██║     
+   ██║   ██╔══╝  ██║╚██╔╝██║██╔═══╝ ██║   ██║██╔══██╗██╔══██║██║     
+   ██║   ███████╗██║ ╚═╝ ██║██║     ╚██████╔╝██║  ██║██║  ██║███████╗
+   ╚═╝   ╚══════╝╚═╝     ╚═╝╚═╝      ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝
+
+⧈ CHRONOS-CORRUPTION TERMINAL v2.47.∞ ⧈
+⧊ 时空裂隙检测系统 | 时间线ID: {{caseId}} ⧊
+⧈ 量子态: {{apiStatus}} ⧈
 {{caseStatus}}
-输入 'help' 查看可用命令
-输入 'config' 配置API设置
-输入 'new_case' 开始新案件
 {{statusCommand}}
+
+[系统] 时空传输链接已建立...
+[警告] 检测到时间线不稳定...
+[状态] 待命中... 输入 'help' 查看可用的时空操作
 `,
-    aiModeReal: '✅ AI模式: 真实API (支持流式传输)',
-    aiModeDemo: '⚠️ AI模式: 模拟演示',
-    caseRestored: '🔄 检测到未完成案件，已自动恢复',
-    statusCommandText: '输入 \'status\' 查看当前案件状态',
-    
-    // AI Service specific translations
-    caseAnalysisSystemStart: '\n=== 案件分析系统启动 ===\n',
-    caseFileGenerationComplete: '\n案件档案生成完成！\n',
-    startInterrogation: '\n=== 开始审问 {{name}} ===\n',
-    startRecording: '\n开始记录对话...\n\n',
-    
-    // 其他常用文本
-    processing: '处理中',
-    inProgress: '进行中',
-    none: '无',
-    unknownError: '未知错误',
-    terminalCleared: '终端已清空',
-    thankYouMessage: '感谢使用AI侦探终端系统。再见！',
-    languageSwitched: '语言已切换为中文',
+    terminalSubtitle: "由戴森球供能的时空遗物，外星科技修补而成",
+    processing: "[时空计算中]",
+    aiModeReal: "真实AI模式",
+    aiModeDemo: "演示模式",
+    caseRestored: "\n[时空] 检测到未完成的案件，正在恢复时间线...",
+    statusCommandText: "输入 'status' 查看案件详情",
+    caseInfo: "\n━━━ 案件时空坐标 ━━━\n描述: {{description}}\n受害者: {{victim}}\n嫌疑人数量: {{suspectCount}}\n证据数量: {{evidenceCount}}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+    availableOperations: "\n⧈ 可用的时空操作 ⧈\n- interrogate <嫌疑人姓名>: 审问嫌疑人\n- recreate: 重现犯罪现场\n- solve: 提交推理答案\n- status: 查看案件状态\n- help: 显示帮助信息",
+    paradoxWarning: "⚠️ 时空悖论检测",
+    timeRemaining: "时间剩余",
+    paradoxResolved: "[时空] 悖论已解决，获得时间加速奖励！",
+    paradoxFailed: "[时空] 悖论解决失败，时空干扰增强..."
   },
   en: {
-    // 系统消息
     systemInit: `
-===============================================================================
-                          █████╗ ██╗     ███████╗██████╗ 
-                         ██╔══██╗██║     ██╔════╝██╔══██╗
-                         ███████║██║     █████╗  ██║  ██║
-                         ██╔══██║██║     ██╔══╝  ██║  ██║
-                         ██║  ██║███████╗███████╗██████╔╝
-                         ╚═╝  ╚═╝╚══════╝╚══════╝╚═════╝ 
-===============================================================================
-AI DETECTIVE TERMINAL v2.1.5 | Current Case ID: #{{caseId}}
--------------------------------------------------------------------------------
-System initialization complete... 
-{{apiStatus}}
+████████╗███████╗███╗   ███╗██████╗  ██████╗ ██████╗  █████╗ ██╗     
+╚══██╔══╝██╔════╝████╗ ████║██╔══██╗██╔═══██╗██╔══██╗██╔══██╗██║     
+   ██║   █████╗  ██╔████╔██║██████╔╝██║   ██║██████╔╝███████║██║     
+   ██║   ██╔══╝  ██║╚██╔╝██║██╔═══╝ ██║   ██║██╔══██╗██╔══██║██║     
+   ██║   ███████╗██║ ╚═╝ ██║██║     ╚██████╔╝██║  ██║██║  ██║███████╗
+   ╚═╝   ╚══════╝╚═╝     ╚═╝╚═╝      ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝
+
+⧈ CHRONOS-CORRUPTION TERMINAL v2.47.∞ ⧈
+⧊ Temporal Rift Detection System | Timeline ID: {{caseId}} ⧊
+⧈ Quantum State: {{apiStatus}} ⧈
 {{caseStatus}}
-Type 'help' to view available commands
-Type 'config' to configure API settings
-Type 'new_case' to start a new case
 {{statusCommand}}
+
+[SYSTEM] Temporal transmission link established...
+[WARNING] Timeline instability detected...
+[STATUS] Standing by... Type 'help' for available temporal operations
 `,
-    aiModeReal: '✅ AI Mode: Real API (Streaming supported)',
-    aiModeDemo: '⚠️ AI Mode: Demo simulation',
-    caseRestored: '🔄 Unfinished case detected, automatically restored',
-    statusCommandText: 'Type \'status\' to view current case status',
-    
-    // AI Service specific translations
-    caseAnalysisSystemStart: '\n=== Case Analysis System Started ===\n',
-    caseFileGenerationComplete: '\nCase file generation complete!\n',
-    startInterrogation: '\n=== Starting interrogation of {{name}} ===\n',
-    startRecording: '\nStarting conversation recording...\n\n',
-    
-    // 其他常用文本
-    processing: 'Processing',
-    inProgress: 'In Progress',
-    none: 'None',
-    unknownError: 'Unknown error',
-    terminalCleared: 'Terminal cleared',
-    thankYouMessage: 'Thank you for using AI Detective Terminal System. Goodbye!',
-    languageSwitched: 'Language switched to English',
+    terminalSubtitle: "Tachyon-powered relic from a disintegrating timeline, patched with alien tech",
+    processing: "[TEMPORAL COMPUTING]",
+    aiModeReal: "Real AI Mode",
+    aiModeDemo: "Demo Mode",
+    caseRestored: "\n[TEMPORAL] Unfinished case detected, restoring timeline...",
+    statusCommandText: "Type 'status' for case details",
+    caseInfo: "\n━━━ Case Temporal Coordinates ━━━\nDescription: {{description}}\nVictim: {{victim}}\nSuspect Count: {{suspectCount}}\nEvidence Count: {{evidenceCount}}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+    availableOperations: "\n⧈ Available Temporal Operations ⧈\n- interrogate <suspect name>: Interrogate suspect\n- recreate: Recreate crime scene\n- solve: Submit deduction\n- status: View case status\n- help: Show help information",
+    paradoxWarning: "⚠️ Temporal Paradox Detected",
+    timeRemaining: "Time Remaining",
+    paradoxResolved: "[TEMPORAL] Paradox resolved, time acceleration bonus granted!",
+    paradoxFailed: "[TEMPORAL] Paradox resolution failed, temporal interference intensified..."
   }
 };
