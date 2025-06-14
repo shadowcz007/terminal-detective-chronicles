@@ -1,4 +1,3 @@
-
 import { GameState } from '../hooks/useGameState';
 import { Language, t } from './i18n';
 import { generateCase, interrogateSuspect, generateCrimeScene } from './aiService';
@@ -128,8 +127,14 @@ ${t('suspectsOverview', language)}`;
         updateGameState({ currentInterrogation: suspect.id });
         
         if (onStreamToken) {
-          // 如果支持流式输出，不返回额外信息，让流式输出自然完成
-          await interrogateSuspect(suspect, gameState, onStreamToken);
+          // 流式模式：获取审问结果并显示
+          const interrogationResult = await interrogateSuspect(suspect, gameState, onStreamToken, language);
+          
+          // 显示审问结果
+          if (interrogationResult) {
+            onStreamToken(`\n${interrogationResult}\n`);
+          }
+          
           return ''; // 返回空字符串，避免重复显示
         } else {
           // 非流式模式
