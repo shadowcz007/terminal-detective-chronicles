@@ -1,103 +1,76 @@
-
 export const caseTranslations = {
   zh: {
-    // 案件信息
-    caseInfo: `
-=== 当前案件信息 ===
-案件描述: {{description}}
-受害者: {{victim}}
-嫌疑人数量: {{suspectCount}}
-证据数量: {{evidenceCount}}
-
-可用操作：
-  list_suspects - 查看嫌疑人
-  evidence - 查看证据
-  recreate - 重现现场
-  interrogate [ID] - 审问嫌疑人
-  clear_case - 清除当前案件
-`,
-    
-    // 新增的案件生成相关翻译
+    caseAnalysisSystemStart: '案件分析系统启动中...',
+    caseFileGenerationComplete: '案件档案生成完成',
+    generatingCaseDetails: '正在生成案件详情...',
     newCaseFile: '=== 新案件档案 ===',
-    caseId: '案件ID',
+    caseId: '案件编号',
     overview: '案件概述',
     victim: '受害者',
-    suspectsOverview: '=== 嫌疑人概况 ===',
+    suspectsOverview: '嫌疑人概览：',
     relationship: '关系',
-    initialEvidence: '=== 初步证据 ===',
+    initialEvidence: '初始证据：',
     location: '位置',
-    availableOperations: `
-可用操作：
-  list_suspects - 查看嫌疑人详情
-  evidence - 查看证据档案  
-  recreate - 重现犯罪现场
-  interrogate [ID] - 审问嫌疑人 (例: interrogate 1)
-  status - 查看案件状态
-  submit [ID] - 提交最终结论`,
-    
+    caseGenerationFailed: '案件生成失败：{{error}}',
+    unknownError: '未知错误',
+    suspectList: '=== 嫌疑人名单 ===',
     relationshipWithVictim: '与死者关系',
     apparentMotive: '表面动机',
+    evidenceFiles: '=== 证据档案 ===',
     locationFound: '发现地点',
     description: '描述',
-    interrogationTip: '提示: 注意观察回答中的矛盾和可疑之处\n输入其他命令继续调查，或审问其他嫌疑人',
-    analyzeSceneDetails: '分析现场细节，寻找可疑之处...',
+    interrogationRecord: '=== {{name}} 审讯记录 ===',
+    interrogationTip: '💡 提示：仔细分析嫌疑人的回答，寻找矛盾和可疑之处',
+    interrogationFailed: '审讯失败：{{error}}',
+    crimeSceneRecreation: '=== 案发现场重建 ===',
+    analyzeSceneDetails: '💡 仔细分析现场细节，寻找关键线索',
+    sceneRecreationFailed: '现场重建失败：{{error}}',
     congratulations: '🎉 恭喜！推理正确！',
     suspectIsKiller: '{{name}} 确实是凶手！',
-    truthRevealed: '真相: {{motive}}',
-    caseClosed: '案件已结案。输入 \'new_case\' 开始新的挑战。',
-    incorrectDeduction: '❌ 推理错误！',
-    suspectNotKiller: '{{name}} 不是真凶。',
-    reexamineEvidence: '请重新审视证据和嫌疑人的证词，寻找真正的线索。',
-    continueInvestigation: '输入 \'interrogate [ID]\' 继续调查',
+    truthRevealed: '真相大白：{{motive}}',
+    caseClosed: '案件结案！',
+    incorrectDeduction: '❌ 推理错误',
+    suspectNotKiller: '{{name}} 不是真正的凶手',
+    reexamineEvidence: '请重新审视证据和线索',
+    continueInvestigation: '继续调查吧！',
+    generateCaseFirst: '请先使用 new_case 命令生成案件',
+    specifyAccusedSuspect: '请指定要指控的嫌疑人编号（例如：submit 1）',
   },
   en: {
-    // 案件信息
-    caseInfo: `
-=== Current Case Information ===
-Case Description: {{description}}
-Victim: {{victim}}
-Number of Suspects: {{suspectCount}}
-Number of Evidence: {{evidenceCount}}
-
-Available Operations:
-  list_suspects - View suspects
-  evidence - View evidence
-  recreate - Recreate crime scene
-  interrogate [ID] - Interrogate suspect
-  clear_case - Clear current case
-`,
-    
-    // 新增的案件生成相关翻译
-    newCaseFile: '=== New Case File ===',
+    caseAnalysisSystemStart: 'Case analysis system starting...',
+    caseFileGenerationComplete: 'Case file generation complete',
+    generatingCaseDetails: 'Generating case details...',
+    newCaseFile: '=== NEW CASE FILE ===',
     caseId: 'Case ID',
-    overview: 'Case Overview',
+    overview: 'Overview',
     victim: 'Victim',
-    suspectsOverview: '=== Suspect Overview ===',
+    suspectsOverview: 'Suspects Overview:',
     relationship: 'Relationship',
-    initialEvidence: '=== Initial Evidence ===',
+    initialEvidence: 'Initial Evidence:',
     location: 'Location',
-    availableOperations: `
-Available Operations:
-  list_suspects - View suspect details
-  evidence - View evidence files
-  recreate - Recreate crime scene  
-  interrogate [ID] - Interrogate suspect (e.g: interrogate 1)
-  status - Check case status
-  submit [ID] - Submit final conclusion`,
-    
+    caseGenerationFailed: 'Case generation failed: {{error}}',
+    unknownError: 'Unknown error',
+    suspectList: '=== SUSPECT LIST ===',
     relationshipWithVictim: 'Relationship with victim',
     apparentMotive: 'Apparent motive',
+    evidenceFiles: '=== EVIDENCE FILES ===',
     locationFound: 'Location found',
     description: 'Description',
-    interrogationTip: 'Tip: Watch for contradictions and suspicious elements in the responses\nEnter other commands to continue investigation, or interrogate other suspects',
-    analyzeSceneDetails: 'Analyze scene details, look for suspicious elements...',
+    interrogationRecord: '=== {{name}} INTERROGATION RECORD ===',
+    interrogationTip: '💡 Tip: Carefully analyze the suspect\'s answers for contradictions and suspicious details',
+    interrogationFailed: 'Interrogation failed: {{error}}',
+    crimeSceneRecreation: '=== CRIME SCENE RECREATION ===',
+    analyzeSceneDetails: '💡 Analyze scene details carefully to find key clues',
+    sceneRecreationFailed: 'Scene recreation failed: {{error}}',
     congratulations: '🎉 Congratulations! Correct deduction!',
     suspectIsKiller: '{{name}} is indeed the killer!',
-    truthRevealed: 'Truth: {{motive}}',
-    caseClosed: 'Case closed. Type \'new_case\' to start a new challenge.',
-    incorrectDeduction: '❌ Incorrect deduction!',
-    suspectNotKiller: '{{name}} is not the real killer.',
-    reexamineEvidence: 'Please re-examine the evidence and suspects\' testimonies for real clues.',
-    continueInvestigation: 'Type \'interrogate [ID]\' to continue investigation',
+    truthRevealed: 'Truth revealed: {{motive}}',
+    caseClosed: 'Case closed!',
+    incorrectDeduction: '❌ Incorrect deduction',
+    suspectNotKiller: '{{name}} is not the real killer',
+    reexamineEvidence: 'Please reexamine the evidence and clues',
+    continueInvestigation: 'Continue the investigation!',
+    generateCaseFirst: 'Please use the new_case command first to generate a case',
+    specifyAccusedSuspect: 'Please specify the suspect number to accuse (e.g., submit 1)',
   }
 };

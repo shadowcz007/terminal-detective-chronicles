@@ -58,7 +58,7 @@ Please return in JSON format, ensuring logical consistency and rich clues.`;
     // 显示案件生成的混淆信息流
     onToken(t('caseAnalysisSystemStart', language));
     
-    // 启动混淆的单行流式效果 - 修正参数顺序
+    // 启动混淆的单行流式效果
     const streamingPromise = createSingleLineStreamingEffect(
       (text: string, isComplete: boolean) => {
         if (isComplete) {
@@ -72,14 +72,16 @@ Please return in JSON format, ensuring logical consistency and rich clues.`;
       4000
     );
     
-    // 同时在后台获取真实数据（不显示给用户）
-    const responsePromise = llmRequest(promptText, config);
-    
     // 等待流式效果完成
     await streamingPromise;
     
-    // 获取真实响应
-    const response = await responsePromise;
+    // 流式效果完成后，开始真实的流式API请求
+    onToken(`\n${t('generatingCaseDetails', language)}\n`);
+    
+    // 使用流式API获取真实数据
+    const response = await llmRequest(promptText, config, (token: string) => {
+      onToken(token);
+    });
     
     return parseCaseResponse(response, language);
   } else {
