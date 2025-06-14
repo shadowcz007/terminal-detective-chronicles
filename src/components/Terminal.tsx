@@ -98,7 +98,7 @@ AI DETECTIVE TERMINAL v2.1.5 | 当前案件ID: #${generateCaseId()}
       </div>
       
       <form onSubmit={handleSubmit} className="flex">
-        <span className="mr-2 text-green-300">></span>
+        <span className="mr-2 text-green-300">{'>'}</span>
         <input
           ref={inputRef}
           type="text"
