@@ -1,6 +1,6 @@
-
 import { useState, useEffect } from 'react';
-import { GameState, ApiConfig, GameProgress, DIFFICULTY_LEVELS } from '../types/gameTypes';
+import { GameState, ApiConfig, GameProgress, DifficultyLevel } from '../types/gameTypes';
+import { DIFFICULTY_LEVELS } from '../features/difficulty/difficultyConfig';
 
 const DEFAULT_CONFIG: ApiConfig = {
   url: 'https://api.openai.com/v1/chat/completions',
