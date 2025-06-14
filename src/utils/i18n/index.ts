@@ -4,6 +4,7 @@ import { commandTranslations } from './commands';
 import { errorTranslations } from './errors';
 import { caseTranslations } from './case';
 import { configTranslations } from './config';
+import { gameFragmentsTranslations } from './gameFragments';
 
 export type Language = 'zh' | 'en';
 
@@ -14,6 +15,7 @@ export const translations = {
     ...errorTranslations.zh,
     ...caseTranslations.zh,
     ...configTranslations.zh,
+    ...gameFragmentsTranslations.zh,
   },
   en: {
     ...systemTranslations.en,
@@ -21,6 +23,7 @@ export const translations = {
     ...errorTranslations.en,
     ...caseTranslations.en,
     ...configTranslations.en,
+    ...gameFragmentsTranslations.en,
   }
 };
 
