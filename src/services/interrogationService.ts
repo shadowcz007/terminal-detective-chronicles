@@ -53,28 +53,28 @@ Please simulate this suspect answering the following questions. Answers should m
     // 显示审问准备的混淆信息流
     onToken(t('startInterrogation', language, { name: suspect.name }));
     
-    // 启动混淆的单行流式效果 - 修正参数顺序
+    let streamingComplete = false;
+    
+    // 启动混淆的单行流式效果 - 使用停止条件函数
     const streamingPromise = createSingleLineStreamingEffect(
       (text: string, isComplete: boolean) => {
-        if (isComplete) {
-          onToken(t('startRecording', language));
-        } else {
-          // 清除当前行并显示新内容
+        if (!streamingComplete) {
+          // 只要API请求未完成，就继续显示混淆效果
           onToken(`\r${text}`);
         }
       }, 
       language,
-      2000
+      () => streamingComplete // 传入停止条件函数
     );
     
     // 同时在后台获取真实数据
     const responsePromise = llmRequest(promptText, gameState.apiConfig, (token: string) => {
       // 在流式效果完成后开始打字机效果
       onToken(token);
+    }).then(response => {
+      streamingComplete = true; // 标记API请求完成
+      return response;
     });
-    
-    // 等待流式效果完成
-    await streamingPromise;
     
     // 等待真实响应完成
     const response = await responsePromise;
