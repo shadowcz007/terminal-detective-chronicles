@@ -1,3 +1,4 @@
+
 export type Language = 'zh' | 'en';
 
 export const translations = {
@@ -43,6 +44,24 @@ AI 侦探终端 v2.1.5 | 当前案件ID: #{{caseId}}
   clear_case - 清除当前案件
 `,
     
+    // 新增的案件生成相关翻译
+    newCaseFile: '=== 新案件档案 ===',
+    caseId: '案件ID',
+    overview: '案件概述',
+    victim: '受害者',
+    suspectsOverview: '=== 嫌疑人概况 ===',
+    relationship: '关系',
+    initialEvidence: '=== 初步证据 ===',
+    location: '位置',
+    availableOperations: `
+可用操作：
+  list_suspects - 查看嫌疑人详情
+  evidence - 查看证据档案  
+  recreate - 重现犯罪现场
+  interrogate [ID] - 审问嫌疑人 (例: interrogate 1)
+  status - 查看案件状态
+  submit [ID] - 提交最终结论`,
+    
     // 帮助信息
     help: `
 可用命令：
@@ -66,6 +85,10 @@ AI 侦探终端 v2.1.5 | 当前案件ID: #{{caseId}}
     caseCleared: '案件数据已清除！\nAPI配置已保留。\n\n输入 \'new_case\' 开始新的案件调查',
     languageSwitched: '语言已切换为中文',
     unknownCommand: '未知命令: {{cmd}}. 输入 \'help\' 查看帮助',
+    suspectList: '=== 嫌疑人名单 ===',
+    evidenceFiles: '=== 证据档案 ===',
+    interrogationRecord: '=== 审问记录: {{name}} ===',
+    crimeSceneRecreation: '=== 犯罪现场重现 ===',
   },
   en: {
     // System messages
@@ -109,6 +132,24 @@ Available Operations:
   clear_case - Clear current case
 `,
     
+    // New case generation related translations
+    newCaseFile: '=== New Case File ===',
+    caseId: 'Case ID',
+    overview: 'Case Overview',
+    victim: 'Victim',
+    suspectsOverview: '=== Suspect Overview ===',
+    relationship: 'Relationship',
+    initialEvidence: '=== Initial Evidence ===',
+    location: 'Location',
+    availableOperations: `
+Available Operations:
+  list_suspects - View suspect details
+  evidence - View evidence files
+  recreate - Recreate crime scene  
+  interrogate [ID] - Interrogate suspect (e.g: interrogate 1)
+  status - Check case status
+  submit [ID] - Submit final conclusion`,
+    
     // Help information
     help: `
 Available Commands:
@@ -132,6 +173,10 @@ Available Commands:
     caseCleared: 'Case data cleared!\nAPI configuration preserved.\n\nType \'new_case\' to start a new investigation',
     languageSwitched: 'Language switched to English',
     unknownCommand: 'Unknown command: {{cmd}}. Type \'help\' for help',
+    suspectList: '=== Suspect List ===',
+    evidenceFiles: '=== Evidence Files ===',
+    interrogationRecord: '=== Interrogation Record: {{name}} ===',
+    crimeSceneRecreation: '=== Crime Scene Recreation ===',
   }
 };
 

@@ -24,7 +24,7 @@ export const executeCommand = async (
 
     case 'status':
       if (!gameState.caseId) {
-        return language === 'zh' ? '当前没有活跃案件，请输入 "new_case" 生成新案件' : 'No active case. Please input "new_case" to create a new case.';
+        return t('noActiveCase', language);
       }
       
       const statusText = language === 'zh' ? `
@@ -76,44 +76,24 @@ Progress Statistics:
         const caseData = await generateCase(gameState.apiConfig, onStreamToken, language);
         updateGameState(caseData);
         
-        // 生成详细的案件信息显示
-        const labels = language === 'zh' ? {
-          newCase: '=== 新案件档案 ===',
-          caseId: '案件ID',
-          overview: '案件概述',
-          victim: '受害者',
-          suspects: '=== 嫌疑人概况 ===',
-          relationship: '关系',
-          evidence: '=== 初步证据 ===',
-          location: '位置'
-        } : {
-          newCase: '=== New Case File ===',
-          caseId: 'Case ID',
-          overview: 'Case Overview',
-          victim: 'Victim',
-          suspects: '=== Suspect Overview ===',
-          relationship: 'Relationship',
-          evidence: '=== Initial Evidence ===',
-          location: 'Location'
-        };
-        
+        // 生成详细的案件信息显示 - 使用翻译
         let caseInfo = `
-${labels.newCase}
-${labels.caseId}: #${caseData.caseId}
-${labels.overview}: ${caseData.caseDescription}
-${labels.victim}: ${caseData.victim}
+${t('newCaseFile', language)}
+${t('caseId', language)}: #${caseData.caseId}
+${t('overview', language)}: ${caseData.caseDescription}
+${t('victim', language)}: ${caseData.victim}
 
-${labels.suspects}`;
+${t('suspectsOverview', language)}`;
         
         caseData.suspects?.forEach((suspect, index) => {
           caseInfo += `\n[${index + 1}] ${suspect.name} - ${suspect.occupation}`;
-          caseInfo += `\n    ${labels.relationship}: ${suspect.relationship}`;
+          caseInfo += `\n    ${t('relationship', language)}: ${suspect.relationship}`;
         });
         
-        caseInfo += `\n\n${labels.evidence}`;
+        caseInfo += `\n\n${t('initialEvidence', language)}`;
         caseData.evidence?.forEach((evidence, index) => {
           caseInfo += `\n[${index + 1}] ${evidence.name}`;
-          caseInfo += `\n    ${labels.location}: ${evidence.location}`;
+          caseInfo += `\n    ${t('location', language)}: ${evidence.location}`;
         });
         
         return caseInfo;
@@ -126,27 +106,27 @@ ${labels.suspects}`;
 
     case 'list_suspects':
       if (gameState.suspects.length === 0) {
-        return language === 'zh' ? '当前没有案件，请先输入 "new_case" 生成案件' : 'No suspects. Please create a case first.';
+        return t('noActiveCase', language);
       }
       
-      let suspectList = '\n=== 嫌疑人名单 ===\n';
+      let suspectList = `\n${t('suspectList', language)}\n`;
       gameState.suspects.forEach((suspect, index) => {
         suspectList += `[${index + 1}] ${suspect.name} - ${suspect.occupation}\n`;
-        suspectList += `    与死者关系: ${suspect.relationship}\n`;
-        suspectList += `    表面动机: ${suspect.motive.substring(0, 30)}...\n\n`;
+        suspectList += `    ${language === 'zh' ? '与死者关系' : 'Relationship with victim'}: ${suspect.relationship}\n`;
+        suspectList += `    ${language === 'zh' ? '表面动机' : 'Apparent motive'}: ${suspect.motive.substring(0, 30)}...\n\n`;
       });
       return suspectList;
 
     case 'evidence':
       if (gameState.evidence.length === 0) {
-        return language === 'zh' ? '当前没有证据，请先输入 "new_case" 生成案件' : 'No evidence. Please create a case first.';
+        return t('noActiveCase', language);
       }
       
-      let evidenceList = '\n=== 证据档案 ===\n';
+      let evidenceList = `\n${t('evidenceFiles', language)}\n`;
       gameState.evidence.forEach((evidence, index) => {
         evidenceList += `[${index + 1}] ${evidence.name}\n`;
-        evidenceList += `    发现地点: ${evidence.location}\n`;
-        evidenceList += `    描述: ${evidence.description}\n\n`;
+        evidenceList += `    ${language === 'zh' ? '发现地点' : 'Location found'}: ${evidence.location}\n`;
+        evidenceList += `    ${language === 'zh' ? '描述' : 'Description'}: ${evidence.description}\n\n`;
       });
       return evidenceList;
 
@@ -168,11 +148,10 @@ ${labels.suspects}`;
           // 非流式模式
           const interrogationResult = await interrogateSuspect(suspect, gameState);
           return `
-=== 审问记录: ${suspect.name} ===
+${t('interrogationRecord', language, { name: suspect.name })}
 ${interrogationResult}
 
-提示: 注意观察回答中的矛盾和可疑之处
-输入其他命令继续调查，或审问其他嫌疑人
+${language === 'zh' ? '提示: 注意观察回答中的矛盾和可疑之处\n输入其他命令继续调查，或审问其他嫌疑人' : 'Tip: Watch for contradictions and suspicious elements in the responses\nEnter other commands to continue investigation, or interrogate other suspects'}
 `;
         }
       } catch (error) {
@@ -187,10 +166,10 @@ ${interrogationResult}
       try {
         const crimeScene = await generateCrimeScene(gameState, onStreamToken);
         return `
-=== 犯罪现场重现 ===
+${t('crimeSceneRecreation', language)}
 ${crimeScene}
 
-分析现场细节，寻找可疑之处...
+${language === 'zh' ? '分析现场细节，寻找可疑之处...' : 'Analyze scene details, look for suspicious elements...'}
 `;
       } catch (error) {
         return language === 'zh' ? `现场重现失败: ${error instanceof Error ? error.message : '未知错误'}` : `Scene recreation failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
@@ -206,22 +185,36 @@ ${crimeScene}
       const isCorrect = accusedSuspect.id === gameState.solution;
       
       if (isCorrect) {
-        return `
+        return language === 'zh' ? `
 🎉 恭喜！推理正确！
 
 ${accusedSuspect.name} 确实是凶手！
 真相: ${accusedSuspect.motive}
 
 案件已结案。输入 'new_case' 开始新的挑战。
+` : `
+🎉 Congratulations! Correct deduction!
+
+${accusedSuspect.name} is indeed the killer!
+Truth: ${accusedSuspect.motive}
+
+Case closed. Type 'new_case' to start a new challenge.
 `;
       } else {
-        return `
+        return language === 'zh' ? `
 ❌ 推理错误！
 
 ${accusedSuspect.name} 不是真凶。
 请重新审视证据和嫌疑人的证词，寻找真正的线索。
 
 输入 'interrogate [ID]' 继续调查
+` : `
+❌ Incorrect deduction!
+
+${accusedSuspect.name} is not the real killer.
+Please re-examine the evidence and suspects' testimonies for real clues.
+
+Type 'interrogate [ID]' to continue investigation
 `;
       }
 

@@ -116,22 +116,7 @@ const Terminal = () => {
 
         // 在案件生成后显示操作提示
         if (command.toLowerCase().startsWith('new_case')) {
-          const operations = language === 'zh' ? `
-可用操作：
-  list_suspects - 查看嫌疑人详情
-  evidence - 查看证据档案  
-  recreate - 重现犯罪现场
-  interrogate [ID] - 审问嫌疑人 (例: interrogate 1)
-  status - 查看案件状态
-  submit [ID] - 提交最终结论` : `
-Available Operations:
-  list_suspects - View suspect details
-  evidence - View evidence files
-  recreate - Recreate crime scene  
-  interrogate [ID] - Interrogate suspect (e.g: interrogate 1)
-  status - Check case status
-  submit [ID] - Submit final conclusion`;
-          addToHistory(operations);
+          addToHistory(t('availableOperations', language));
         }
       } else {
         // 非流式命令或未配置API密钥
@@ -140,22 +125,7 @@ Available Operations:
         
         // 在案件生成后显示操作提示（非流式模式）
         if (command.toLowerCase().startsWith('new_case')) {
-          const operations = language === 'zh' ? `
-可用操作：
-  list_suspects - 查看嫌疑人详情
-  evidence - 查看证据档案  
-  recreate - 重现犯罪现场
-  interrogate [ID] - 审问嫌疑人 (例: interrogate 1)
-  status - 查看案件状态
-  submit [ID] - 提交最终结论` : `
-Available Operations:
-  list_suspects - View suspect details
-  evidence - View evidence files
-  recreate - Recreate crime scene  
-  interrogate [ID] - Interrogate suspect (e.g: interrogate 1)
-  status - Check case status
-  submit [ID] - Submit final conclusion`;
-          addToHistory(operations);
+          addToHistory(t('availableOperations', language));
         }
       }
     } catch (error) {
