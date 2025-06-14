@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useGameState } from '../hooks/useGameState';
 import { executeCommand } from '../utils/commandHandler';
@@ -9,6 +8,7 @@ const Terminal = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentResponse, setCurrentResponse] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
+  const [loadingText, setLoadingText] = useState(''); // 新增：专门处理loading文本
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { gameState, updateGameState, updateApiConfig } = useGameState();
@@ -50,7 +50,13 @@ ${gameState.apiConfig.key ? '✅ AI模式: 真实API (支持流式传输)' : '�
   };
 
   const handleStreamToken = (token: string) => {
-    setCurrentResponse(prev => prev + token);
+    if (token.startsWith('\r')) {
+      // 处理单行更新（回车符开头）
+      setLoadingText(token.slice(1));
+    } else {
+      // 处理正常流式输出
+      setCurrentResponse(prev => prev + token);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,6 +68,7 @@ ${gameState.apiConfig.key ? '✅ AI模式: 真实API (支持流式传输)' : '�
     setInput('');
     setIsLoading(true);
     setCurrentResponse('');
+    setLoadingText('');
 
     // 检查是否是需要流式响应的命令
     const streamingCommands = ['new_case', 'interrogate', 'recreate'];
@@ -84,9 +91,17 @@ ${gameState.apiConfig.key ? '✅ AI模式: 真实API (支持流式传输)' : '�
           setCurrentResponse('');
         }
         
+        // 清空loading文本
+        setLoadingText('');
+        
         // 如果还有额外的结果信息，也添加到历史记录
         if (result && result !== currentResponse) {
           addToHistory(result);
+        }
+
+        // 显示操作提示
+        if (command.toLowerCase().startsWith('new_case')) {
+          addToHistory('\n可用操作：\n  list_suspects - 查看嫌疑人\n  evidence - 查看证据\n  recreate - 重现现场\n  interrogate [ID] - 审问嫌疑人');
         }
       } else {
         // 非流式命令或未配置API密钥
@@ -99,6 +114,7 @@ ${gameState.apiConfig.key ? '✅ AI模式: 真实API (支持流式传输)' : '�
 
     setIsLoading(false);
     setIsStreaming(false);
+    setLoadingText('');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -130,8 +146,16 @@ ${gameState.apiConfig.key ? '✅ AI模式: 真实API (支持流式传输)' : '�
             {isStreaming && <span className="animate-pulse">█</span>}
           </div>
         )}
+
+        {/* 显示loading文本（单行更新） */}
+        {loadingText && (
+          <div className="mb-1">
+            {loadingText}
+            <span className="animate-pulse text-yellow-400">█</span>
+          </div>
+        )}
         
-        {isLoading && !isStreaming && (
+        {isLoading && !isStreaming && !loadingText && (
           <div className="flex items-center">
             <span className="mr-2">处理中</span>
             <div className="flex space-x-1">

@@ -1,5 +1,5 @@
 import { GameState, Suspect, Evidence, ApiConfig } from '../hooks/useGameState';
-import { createStreamingEffect } from './gameFragments';
+import { createSingleLineStreamingEffect } from './gameFragments';
 
 // 流式响应处理函数
 export const streamLLMRequest = async (
@@ -314,18 +314,25 @@ export const generateCase = async (
   if (onToken) {
     // 显示案件生成的混淆信息流
     onToken('\n=== 案件分析系统启动 ===\n');
-    onToken('正在分析犯罪现场数据...\n\n');
     
-    // 启动混淆的流式效果
-    const streamingPromise = createStreamingEffect(onToken, 4000);
+    // 启动混淆的单行流式效果
+    const streamingPromise = createSingleLineStreamingEffect(
+      (text: string, isComplete: boolean) => {
+        if (isComplete) {
+          onToken('\n分析完成，正在生成案件档案...\n');
+        } else {
+          // 清除当前行并显示新内容
+          onToken(`\r${text}`);
+        }
+      }, 
+      4000
+    );
     
     // 同时在后台获取真实数据（不显示给用户）
     const responsePromise = llmRequest(prompt, apiConfig);
     
     // 等待流式效果完成
     await streamingPromise;
-    
-    onToken('\n分析完成，正在生成案件档案...\n');
     
     // 获取真实响应
     const response = await responsePromise;
