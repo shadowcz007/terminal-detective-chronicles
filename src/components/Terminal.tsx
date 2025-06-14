@@ -123,14 +123,33 @@ ${hasExistingCase ? '输入 \'status\' 查看当前案件状态' : ''}
           addToHistory(result);
         }
 
-        // 显示操作提示
+        // 在案件生成后显示操作提示
         if (command.toLowerCase().startsWith('new_case')) {
-          addToHistory('\n可用操作：\n  list_suspects - 查看嫌疑人\n  evidence - 查看证据\n  recreate - 重现现场\n  interrogate [ID] - 审问嫌疑人\n  status - 查看案件状态');
+          addToHistory(`
+可用操作：
+  list_suspects - 查看嫌疑人详情
+  evidence - 查看证据档案  
+  recreate - 重现犯罪现场
+  interrogate [ID] - 审问嫌疑人 (例: interrogate 1)
+  status - 查看案件状态
+  submit [ID] - 提交最终结论`);
         }
       } else {
         // 非流式命令或未配置API密钥
         const result = await executeCommand(command, gameState, updateGameState, updateApiConfig);
         addToHistory(result);
+        
+        // 在案件生成后显示操作提示（非流式模式）
+        if (command.toLowerCase().startsWith('new_case')) {
+          addToHistory(`
+可用操作：
+  list_suspects - 查看嫌疑人详情
+  evidence - 查看证据档案  
+  recreate - 重现犯罪现场
+  interrogate [ID] - 审问嫌疑人 (例: interrogate 1)
+  status - 查看案件状态
+  submit [ID] - 提交最终结论`);
+        }
       }
     } catch (error) {
       addToHistory(`ERROR: ${error instanceof Error ? error.message : '未知错误'}`);

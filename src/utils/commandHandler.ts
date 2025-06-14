@@ -1,4 +1,3 @@
-
 import { GameState } from '../hooks/useGameState';
 import { generateCase, interrogateSuspect, generateCrimeScene } from './aiService';
 
@@ -79,18 +78,28 @@ API配置已保留。
       try {
         const caseData = await generateCase(gameState.apiConfig, onStreamToken);
         updateGameState(caseData);
-        return `
-新案件已生成！
+        
+        // 生成详细的案件信息显示
+        let caseInfo = `
+=== 新案件档案 ===
 案件ID: #${caseData.caseId}
-${caseData.caseDescription}
-
+案件概述: ${caseData.caseDescription}
 受害者: ${caseData.victim}
-嫌疑人数量: ${caseData.suspects?.length || 0}
-初始证据: ${caseData.evidence?.length || 0}个
 
-输入 'list_suspects' 查看嫌疑人信息
-输入 'evidence' 查看证据档案
-`;
+=== 嫌疑人概况 ===`;
+        
+        caseData.suspects?.forEach((suspect, index) => {
+          caseInfo += `\n[${index + 1}] ${suspect.name} - ${suspect.occupation}`;
+          caseInfo += `\n    关系: ${suspect.relationship}`;
+        });
+        
+        caseInfo += `\n\n=== 初步证据 ===`;
+        caseData.evidence?.forEach((evidence, index) => {
+          caseInfo += `\n[${index + 1}] ${evidence.name}`;
+          caseInfo += `\n    位置: ${evidence.location}`;
+        });
+        
+        return caseInfo;
       } catch (error) {
         return `案件生成失败: ${error instanceof Error ? error.message : '未知错误'}`;
       }

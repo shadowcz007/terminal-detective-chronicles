@@ -319,7 +319,7 @@ export const generateCase = async (
     const streamingPromise = createSingleLineStreamingEffect(
       (text: string, isComplete: boolean) => {
         if (isComplete) {
-          onToken('\n分析完成，正在生成案件档案...\n');
+          onToken('\n案件档案生成完成！\n');
         } else {
           // 清除当前行并显示新内容
           onToken(`\r${text}`);
