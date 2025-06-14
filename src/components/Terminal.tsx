@@ -7,6 +7,8 @@ const Terminal = () => {
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentResponse, setCurrentResponse] = useState('');
+  const [isStreaming, setIsStreaming] = useState(false);
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { gameState, updateGameState, updateApiConfig } = useGameState();
@@ -25,7 +27,7 @@ const Terminal = () => {
 AI DETECTIVE TERMINAL v2.1.5 | 当前案件ID: #${generateCaseId()}
 -------------------------------------------------------------------------------
 系统初始化完成... 
-${gameState.apiConfig.key ? '✅ AI模式: 真实API' : '⚠️ AI模式: 模拟演示'}
+${gameState.apiConfig.key ? '✅ AI模式: 真实API (支持流式传输)' : '⚠️ AI模式: 模拟演示'}
 输入 'help' 查看可用命令
 输入 'config' 配置API设置
 输入 'new_case' 开始新案件
@@ -37,7 +39,7 @@ ${gameState.apiConfig.key ? '✅ AI模式: 真实API' : '⚠️ AI模式: 模拟
     if (terminalRef.current) {
       terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
     }
-  }, [history]);
+  }, [history, currentResponse]);
 
   const generateCaseId = () => {
     return `MH${new Date().getFullYear().toString().slice(-2)}${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
@@ -45,6 +47,10 @@ ${gameState.apiConfig.key ? '✅ AI模式: 真实API' : '⚠️ AI模式: 模拟
 
   const addToHistory = (text: string) => {
     setHistory(prev => [...prev, text]);
+  };
+
+  const handleStreamToken = (token: string) => {
+    setCurrentResponse(prev => prev + token);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,15 +61,44 @@ ${gameState.apiConfig.key ? '✅ AI模式: 真实API' : '⚠️ AI模式: 模拟
     addToHistory(`> ${command}`);
     setInput('');
     setIsLoading(true);
+    setCurrentResponse('');
+
+    // 检查是否是需要流式响应的命令
+    const streamingCommands = ['new_case', 'interrogate', 'recreate'];
+    const shouldStream = streamingCommands.some(cmd => command.toLowerCase().startsWith(cmd));
 
     try {
-      const result = await executeCommand(command, gameState, updateGameState, updateApiConfig);
-      addToHistory(result);
+      if (shouldStream && gameState.apiConfig.key) {
+        setIsStreaming(true);
+        const result = await executeCommand(
+          command, 
+          gameState, 
+          updateGameState, 
+          updateApiConfig,
+          handleStreamToken
+        );
+        
+        // 流式响应完成后，将当前响应添加到历史记录
+        if (currentResponse) {
+          addToHistory(currentResponse);
+          setCurrentResponse('');
+        }
+        
+        // 如果还有额外的结果信息，也添加到历史记录
+        if (result && result !== currentResponse) {
+          addToHistory(result);
+        }
+      } else {
+        // 非流式命令或未配置API密钥
+        const result = await executeCommand(command, gameState, updateGameState, updateApiConfig);
+        addToHistory(result);
+      }
     } catch (error) {
       addToHistory(`ERROR: ${error instanceof Error ? error.message : '未知错误'}`);
     }
 
     setIsLoading(false);
+    setIsStreaming(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -87,7 +122,16 @@ ${gameState.apiConfig.key ? '✅ AI模式: 真实API' : '⚠️ AI模式: 模拟
             {line}
           </div>
         ))}
-        {isLoading && (
+        
+        {/* 显示当前流式响应 */}
+        {currentResponse && (
+          <div className="mb-1">
+            {currentResponse}
+            {isStreaming && <span className="animate-pulse">█</span>}
+          </div>
+        )}
+        
+        {isLoading && !isStreaming && (
           <div className="flex items-center">
             <span className="mr-2">处理中</span>
             <div className="flex space-x-1">

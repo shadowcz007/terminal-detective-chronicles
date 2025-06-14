@@ -1,6 +1,101 @@
 import { GameState, Suspect, Evidence, ApiConfig } from '../hooks/useGameState';
 
-// 真实的LLM API请求函数
+// 流式响应处理函数
+export const streamLLMRequest = async (
+  prompt: string, 
+  apiConfig: ApiConfig,
+  onToken: (token: string) => void
+): Promise<string> => {
+  if (!apiConfig.key.trim()) {
+    throw new Error('API密钥未配置，请先在config中设置');
+  }
+
+  if (!apiConfig.url.trim()) {
+    throw new Error('API端点未配置，请先在config中设置');
+  }
+
+  const options = {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiConfig.key}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: apiConfig.model,
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 2000,
+      stream: true
+    })
+  };
+
+  try {
+    const response = await fetch(apiConfig.url, options);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`API请求失败: ${response.status} ${response.statusText} - ${errorData.error?.message || '未知错误'}`);
+    }
+
+    if (!response.body) {
+      throw new Error('响应体为空');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullContent = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      
+      if (done) break;
+      
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n');
+      
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          
+          if (data === '[DONE]') {
+            return fullContent;
+          }
+          
+          try {
+            const parsed = JSON.parse(data);
+            
+            if (parsed.choices && parsed.choices[0] && parsed.choices[0].delta) {
+              const content = parsed.choices[0].delta.content;
+              if (content) {
+                fullContent += content;
+                onToken(content);
+                // 添加延迟以实现打字机效果
+                await new Promise(resolve => setTimeout(resolve, 30));
+              }
+            }
+          } catch (e) {
+            // 忽略解析错误的行
+            continue;
+          }
+        }
+      }
+    }
+
+    return fullContent;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(`网络请求失败: ${error}`);
+  }
+};
+
+// 真实的LLM API请求函数 - 非流式版本，作为备用
 export const realLLMRequest = async (prompt: string, apiConfig: ApiConfig): Promise<string> => {
   if (!apiConfig.key.trim()) {
     throw new Error('API密钥未配置，请先在config中设置');
@@ -39,11 +134,12 @@ export const realLLMRequest = async (prompt: string, apiConfig: ApiConfig): Prom
 
     const data = await response.json();
     
-    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      throw new Error('API响应格式错误');
+    // 适配新的响应格式
+    if (data.choices && data.choices[0] && data.choices[0].message) {
+      return data.choices[0].message.content;
     }
-
-    return data.choices[0].message.content;
+    
+    throw new Error('API响应格式错误');
   } catch (error) {
     if (error instanceof Error) {
       throw error;
@@ -160,17 +256,28 @@ export const mockLLMRequest = async (prompt: string): Promise<string> => {
   return '模拟AI响应：请检查提示词内容';
 };
 
-// 使用真实API或模拟API的请求函数
-const llmRequest = async (prompt: string, apiConfig: ApiConfig): Promise<string> => {
+// 使用流式API或模拟API的请求函数
+const llmRequest = async (
+  prompt: string, 
+  apiConfig: ApiConfig, 
+  onToken?: (token: string) => void
+): Promise<string> => {
   // 如果配置了API密钥，使用真实API，否则使用模拟API
   if (apiConfig.key.trim()) {
-    return await realLLMRequest(prompt, apiConfig);
+    if (onToken) {
+      return await streamLLMRequest(prompt, apiConfig, onToken);
+    } else {
+      return await realLLMRequest(prompt, apiConfig);
+    }
   } else {
     return await mockLLMRequest(prompt);
   }
 };
 
-export const generateCase = async (apiConfig: ApiConfig): Promise<Partial<GameState>> => {
+export const generateCase = async (
+  apiConfig: ApiConfig, 
+  onToken?: (token: string) => void
+): Promise<Partial<GameState>> => {
   const prompt = `作为犯罪剧本生成器，请创建一起谋杀案，包含：
 1. 50字内的案件背景描述
 2. 受害者姓名
@@ -202,10 +309,19 @@ export const generateCase = async (apiConfig: ApiConfig): Promise<Partial<GameSt
   "solution": "suspect_1"
 }`;
   
-  const response = await llmRequest(prompt, apiConfig);
+  const response = await llmRequest(prompt, apiConfig, onToken);
   
   try {
-    const caseData = JSON.parse(response);
+    // 提取JSON内容，处理可能包含代码块的响应
+    let jsonContent = response;
+    if (response.includes('```json')) {
+      const match = response.match(/```json\n([\s\S]*?)\n```/);
+      if (match) {
+        jsonContent = match[1];
+      }
+    }
+    
+    const caseData = JSON.parse(jsonContent);
     return {
       caseId: `MH${new Date().getFullYear().toString().slice(-2)}${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
       caseDescription: caseData.description,
@@ -219,7 +335,11 @@ export const generateCase = async (apiConfig: ApiConfig): Promise<Partial<GameSt
   }
 };
 
-export const interrogateSuspect = async (suspect: Suspect, gameState: GameState): Promise<string> => {
+export const interrogateSuspect = async (
+  suspect: Suspect, 
+  gameState: GameState,
+  onToken?: (token: string) => void
+): Promise<string> => {
   const prompt = `你正在扮演嫌疑人${suspect.name}（${suspect.occupation}）。
 背景：${gameState.caseDescription}
 你的动机：${suspect.motive}
@@ -237,10 +357,13 @@ export const interrogateSuspect = async (suspect: Suspect, gameState: GameState)
 3. 你有什么要隐瞒的吗？
 4. 有人能证明你的不在场证明吗？`;
   
-  return await llmRequest(prompt, gameState.apiConfig);
+  return await llmRequest(prompt, gameState.apiConfig, onToken);
 };
 
-export const generateCrimeScene = async (gameState: GameState): Promise<string> => {
+export const generateCrimeScene = async (
+  gameState: GameState,
+  onToken?: (token: string) => void
+): Promise<string> => {
   const prompt = `根据以下案件信息生成犯罪现场ASCII示意图：
 案件：${gameState.caseDescription}
 受害者：${gameState.victim}
@@ -253,5 +376,5 @@ export const generateCrimeScene = async (gameState: GameState): Promise<string> 
 4. 宽度不超过80字符
 5. 添加现场分析说明`;
   
-  return await llmRequest(prompt, gameState.apiConfig);
+  return await llmRequest(prompt, gameState.apiConfig, onToken);
 };

@@ -1,3 +1,4 @@
+
 import { GameState } from '../hooks/useGameState';
 import { generateCase, interrogateSuspect, generateCrimeScene } from './aiService';
 
@@ -5,7 +6,8 @@ export const executeCommand = async (
   command: string, 
   gameState: GameState, 
   updateGameState: (updates: Partial<GameState>) => void,
-  updateApiConfig: (config: Partial<GameState['apiConfig']>) => void
+  updateApiConfig: (config: Partial<GameState['apiConfig']>) => void,
+  onStreamToken?: (token: string) => void
 ): Promise<string> => {
   const parts = command.split(' ');
   const cmd = parts[0].toLowerCase();
@@ -31,7 +33,7 @@ export const executeCommand = async (
 
     case 'new_case':
       try {
-        const caseData = await generateCase(gameState.apiConfig);
+        const caseData = await generateCase(gameState.apiConfig, onStreamToken);
         updateGameState(caseData);
         return `
 新案件已生成！
@@ -85,7 +87,7 @@ ${caseData.caseDescription}
         const suspect = gameState.suspects[suspectIndex];
         updateGameState({ currentInterrogation: suspect.id });
         
-        const interrogationResult = await interrogateSuspect(suspect, gameState);
+        const interrogationResult = await interrogateSuspect(suspect, gameState, onStreamToken);
         return `
 === 审问记录: ${suspect.name} ===
 ${interrogationResult}
@@ -103,7 +105,7 @@ ${interrogationResult}
       }
       
       try {
-        const crimeScene = await generateCrimeScene(gameState);
+        const crimeScene = await generateCrimeScene(gameState, onStreamToken);
         return `
 === 犯罪现场重现 ===
 ${crimeScene}
