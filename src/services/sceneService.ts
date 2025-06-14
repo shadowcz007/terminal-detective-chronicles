@@ -1,46 +1,57 @@
 
 import { GameState } from '../hooks/useGameState';
 import { Language, t } from '../utils/i18n';
-import { llmRequest } from './llmClient';
+import { createSingleLineStreamingEffect } from '../utils/gameFragments';
+import { streamLLMRequest, realLLMRequest } from './llmClient';
+import { getSceneRecreationPrompt } from '../utils/prompts';
 
 export const generateCrimeScene = async (
   gameState: GameState, 
   onToken?: (token: string) => void,
   language: Language = 'zh'
 ): Promise<string> => {
-  const promptText = language === 'zh' ?
-    `基于以下案件信息，详细描述犯罪现场的重现：
+  const promptText = getSceneRecreationPrompt(gameState, language);
 
-案件：${gameState.caseDescription}
-受害者：${gameState.victim}
-
-嫌疑人：
-${gameState.suspects.map(s => `- ${s.name}: ${s.relationship}`).join('\n')}
-
-证据：
-${gameState.evidence.map(e => `- ${e.name} (${e.location}): ${e.description}`).join('\n')}
-
-请生成一个详细的犯罪现场重现，包括：
-1. 现场环境描述
-2. 事件发生过程推测
-3. 关键细节分析
-4. 可疑之处指出` :
-    `Based on the following case information, provide a detailed description of the crime scene recreation:
-
-Case: ${gameState.caseDescription}
-Victim: ${gameState.victim}
-
-Suspects:
-${gameState.suspects.map(s => `- ${s.name}: ${s.relationship}`).join('\n')}
-
-Evidence:
-${gameState.evidence.map(e => `- ${e.name} (${e.location}): ${e.description}`).join('\n')}
-
-Please generate a detailed crime scene recreation including:
-1. Scene environment description
-2. Speculation on how events unfolded
-3. Key detail analysis
-4. Identification of suspicious elements`;
-
-  return await llmRequest(promptText, gameState.apiConfig, onToken);
+  // 如果有onToken回调，说明需要流式效果
+  if (onToken) {
+    // 显示现场重现分析的混淆信息流
+    onToken(t('sceneAnalysisStart', language));
+    
+    let streamingComplete = false;
+    
+    // 启动混淆的单行流式效果 - 使用停止条件函数
+    const streamingPromise = createSingleLineStreamingEffect(
+      (text: string, isComplete: boolean) => {
+        if (!streamingComplete) {
+          // 只要API请求未完成，就继续显示混淆效果
+          onToken(`\r${text}`);
+        }
+      }, 
+      language,
+      () => streamingComplete // 传入停止条件函数
+    );
+    
+    // 启动真实的流式API请求
+    const apiPromise = streamLLMRequest(promptText, gameState.apiConfig, (token: string) => {
+      // 当流式响应开始时，停止混淆效果
+      if (!streamingComplete) {
+        streamingComplete = true;
+        onToken(`\n${t('sceneRecreationStarted', language)}\n`);
+      }
+      // 显示真实的流式响应
+      onToken(token);
+    });
+    
+    // 等待API请求完成
+    const response = await apiPromise;
+    
+    // 在现场重现结束后添加提示
+    const hintMsg = t('sceneAnalysisTip', language);
+    onToken(`\n\n${hintMsg}\n`);
+    
+    return response;
+  } else {
+    // 非流式模式，使用实际的API请求
+    return await realLLMRequest(promptText, gameState.apiConfig);
+  }
 };
