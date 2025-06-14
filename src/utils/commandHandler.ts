@@ -1,3 +1,4 @@
+
 import { GameState } from '../hooks/useGameState';
 import { Language, t } from '../utils/i18n';
 import { generateCase, interrogateSuspect, generateCrimeScene } from './aiService';
@@ -27,35 +28,22 @@ export const executeCommand = async (
         return t('noActiveCase', language);
       }
       
-      const statusText = language === 'zh' ? `
-=== 案件状态 ===
-案件ID: #${gameState.caseId}
-案件描述: ${gameState.caseDescription}
-受害者: ${gameState.victim}
-嫌疑人数量: ${gameState.suspects.length}
-证据数量: ${gameState.evidence.length}
-当前审问: ${gameState.currentInterrogation ? '进行中' : '无'}
-
-进度统计:
-- 已审问嫌疑人: ${gameState.suspects.filter(s => s.id === gameState.currentInterrogation).length}/${gameState.suspects.length}
-- 收集证据: ${gameState.evidence.length}个` : `
-=== Case Status ===
-Case ID: #${gameState.caseId}
-Case Description: ${gameState.caseDescription}
-Victim: ${gameState.victim}
-Number of Suspects: ${gameState.suspects.length}
-Number of Evidence: ${gameState.evidence.length}
-Current Interrogation: ${gameState.currentInterrogation ? 'In Progress' : 'None'}
-
-Progress Statistics:
-- Interrogated Suspects: ${gameState.suspects.filter(s => s.id === gameState.currentInterrogation).length}/${gameState.suspects.length}
-- Collected Evidence: ${gameState.evidence.length} items`;
+      const statusText = t('caseStatus', language, {
+        caseId: gameState.caseId,
+        description: gameState.caseDescription,
+        victim: gameState.victim,
+        suspectCount: gameState.suspects.length.toString(),
+        evidenceCount: gameState.evidence.length.toString(),
+        currentInterrogation: gameState.currentInterrogation ? t('inProgress', language) : t('none', language),
+        interrogatedCount: gameState.suspects.filter(s => s.id === gameState.currentInterrogation).length.toString(),
+        totalSuspects: gameState.suspects.length.toString()
+      });
       
       return statusText;
 
     case 'clear_case':
       if (!gameState.caseId) {
-        return language === 'zh' ? '当前没有案件需要清除' : 'No case to clear currently';
+        return t('noCurrentCase', language);
       }
       
       // 清除案件数据但保留API配置
@@ -98,10 +86,9 @@ ${t('suspectsOverview', language)}`;
         
         return caseInfo;
       } catch (error) {
-        const errorMsg = language === 'zh' ? 
-          `案件生成失败: ${error instanceof Error ? error.message : '未知错误'}` :
-          `Case generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
-        return errorMsg;
+        return t('caseGenerationFailed', language, {
+          error: error instanceof Error ? error.message : t('unknownError', language)
+        });
       }
 
     case 'list_suspects':
@@ -112,8 +99,8 @@ ${t('suspectsOverview', language)}`;
       let suspectList = `\n${t('suspectList', language)}\n`;
       gameState.suspects.forEach((suspect, index) => {
         suspectList += `[${index + 1}] ${suspect.name} - ${suspect.occupation}\n`;
-        suspectList += `    ${language === 'zh' ? '与死者关系' : 'Relationship with victim'}: ${suspect.relationship}\n`;
-        suspectList += `    ${language === 'zh' ? '表面动机' : 'Apparent motive'}: ${suspect.motive.substring(0, 30)}...\n\n`;
+        suspectList += `    ${t('relationshipWithVictim', language)}: ${suspect.relationship}\n`;
+        suspectList += `    ${t('apparentMotive', language)}: ${suspect.motive.substring(0, 30)}...\n\n`;
       });
       return suspectList;
 
@@ -125,15 +112,15 @@ ${t('suspectsOverview', language)}`;
       let evidenceList = `\n${t('evidenceFiles', language)}\n`;
       gameState.evidence.forEach((evidence, index) => {
         evidenceList += `[${index + 1}] ${evidence.name}\n`;
-        evidenceList += `    ${language === 'zh' ? '发现地点' : 'Location found'}: ${evidence.location}\n`;
-        evidenceList += `    ${language === 'zh' ? '描述' : 'Description'}: ${evidence.description}\n\n`;
+        evidenceList += `    ${t('locationFound', language)}: ${evidence.location}\n`;
+        evidenceList += `    ${t('description', language)}: ${evidence.description}\n\n`;
       });
       return evidenceList;
 
     case 'interrogate':
       const suspectIndex = parseInt(args[0]) - 1;
       if (isNaN(suspectIndex) || !gameState.suspects[suspectIndex]) {
-        return language === 'zh' ? '请指定有效的嫌疑人编号，例如: interrogate 1' : 'Please specify a valid suspect ID, e.g., interrogate 1.';
+        return t('validSuspectId', language);
       }
       
       try {
@@ -151,16 +138,18 @@ ${t('suspectsOverview', language)}`;
 ${t('interrogationRecord', language, { name: suspect.name })}
 ${interrogationResult}
 
-${language === 'zh' ? '提示: 注意观察回答中的矛盾和可疑之处\n输入其他命令继续调查，或审问其他嫌疑人' : 'Tip: Watch for contradictions and suspicious elements in the responses\nEnter other commands to continue investigation, or interrogate other suspects'}
+${t('interrogationTip', language)}
 `;
         }
       } catch (error) {
-        return language === 'zh' ? `审问失败: ${error instanceof Error ? error.message : '未知错误'}` : `Interrogation failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+        return t('interrogationFailed', language, {
+          error: error instanceof Error ? error.message : t('unknownError', language)
+        });
       }
 
     case 'recreate':
       if (!gameState.caseDescription) {
-        return language === 'zh' ? '请先生成案件才能重现犯罪现场' : 'Please generate a case first to recreate the crime scene.';
+        return t('generateCaseFirst', language);
       }
       
       try {
@@ -169,52 +158,40 @@ ${language === 'zh' ? '提示: 注意观察回答中的矛盾和可疑之处\n�
 ${t('crimeSceneRecreation', language)}
 ${crimeScene}
 
-${language === 'zh' ? '分析现场细节，寻找可疑之处...' : 'Analyze scene details, look for suspicious elements...'}
+${t('analyzeSceneDetails', language)}
 `;
       } catch (error) {
-        return language === 'zh' ? `现场重现失败: ${error instanceof Error ? error.message : '未知错误'}` : `Scene recreation failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+        return t('sceneRecreationFailed', language, {
+          error: error instanceof Error ? error.message : t('unknownError', language)
+        });
       }
 
     case 'submit':
       const submitIndex = parseInt(args[0]) - 1;
       if (isNaN(submitIndex) || !gameState.suspects[submitIndex]) {
-        return language === 'zh' ? '请指定要指控的嫌疑人编号，例如: submit 2' : 'Please specify the suspect ID to accuse, e.g., submit 2.';
+        return t('specifyAccusedSuspect', language);
       }
       
       const accusedSuspect = gameState.suspects[submitIndex];
       const isCorrect = accusedSuspect.id === gameState.solution;
       
       if (isCorrect) {
-        return language === 'zh' ? `
-🎉 恭喜！推理正确！
+        return `
+${t('congratulations', language)}
 
-${accusedSuspect.name} 确实是凶手！
-真相: ${accusedSuspect.motive}
+${t('suspectIsKiller', language, { name: accusedSuspect.name })}
+${t('truthRevealed', language, { motive: accusedSuspect.motive })}
 
-案件已结案。输入 'new_case' 开始新的挑战。
-` : `
-🎉 Congratulations! Correct deduction!
-
-${accusedSuspect.name} is indeed the killer!
-Truth: ${accusedSuspect.motive}
-
-Case closed. Type 'new_case' to start a new challenge.
+${t('caseClosed', language)}
 `;
       } else {
-        return language === 'zh' ? `
-❌ 推理错误！
+        return `
+${t('incorrectDeduction', language)}
 
-${accusedSuspect.name} 不是真凶。
-请重新审视证据和嫌疑人的证词，寻找真正的线索。
+${t('suspectNotKiller', language, { name: accusedSuspect.name })}
+${t('reexamineEvidence', language)}
 
-输入 'interrogate [ID]' 继续调查
-` : `
-❌ Incorrect deduction!
-
-${accusedSuspect.name} is not the real killer.
-Please re-examine the evidence and suspects' testimonies for real clues.
-
-Type 'interrogate [ID]' to continue investigation
+${t('continueInvestigation', language)}
 `;
       }
 
@@ -222,24 +199,16 @@ Type 'interrogate [ID]' to continue investigation
       if (args.length === 0) {
         // 显示当前配置
         const { apiConfig } = gameState;
-        const maskedKey = apiConfig.key ? `${apiConfig.key.substring(0, 10)}...` : '未设置';
+        const maskedKey = apiConfig.key ? `${apiConfig.key.substring(0, 10)}...` : t('notSet', language);
         return `
-=== API 配置 ===
-端点: ${apiConfig.url}
-模型: ${apiConfig.model}
-密钥: ${maskedKey}
+${t('apiConfiguration', language)}
+${t('endpoint', language)}: ${apiConfig.url}
+${t('model', language)}: ${apiConfig.model}
+${t('key', language)}: ${maskedKey}
 
-使用方法:
-  config url <API端点>    - 设置API端点
-  config key <API密钥>    - 设置API密钥
-  config model <模型名>   - 设置模型
+${t('configUsage', language)}
 
-常用配置示例:
-  config url https://api.openai.com/v1/chat/completions
-  config key sk-xxx...
-  config model gpt-3.5-turbo
-
-提示: ${apiConfig.key ? '✅ 已配置API密钥，将使用真实AI' : '⚠️ 未配置API密钥，当前使用模拟AI'}
+${apiConfig.key ? t('configuredApiKey', language) : t('unconfiguredApiKey', language)}
 `;
       } else {
         // 设置配置 - 严格按照用户输入，不处理大小写
@@ -249,30 +218,30 @@ Type 'interrogate [ID]' to continue investigation
         
         switch (configType) {
           case 'url':
-            if (!value) return 'API端点不能为空';
+            if (!value) return t('endpointCannotBeEmpty', language);
             updateApiConfig({ url: value });
-            return `API端点已设置为: ${value}`;
+            return t('endpointSet', language, { url: value });
             
           case 'key':
-            if (!value) return 'API密钥不能为空';
+            if (!value) return t('keyCannotBeEmpty', language);
             updateApiConfig({ key: value });
-            return `API密钥已设置 (${value.substring(0, 10)}...)`;
+            return t('keySet', language, { key: value.substring(0, 10) });
             
           case 'model':
-            if (!value) return '模型名不能为空';
+            if (!value) return t('modelCannotBeEmpty', language);
             updateApiConfig({ model: value });
-            return `模型已设置为: ${value}`;
+            return t('modelSet', language, { model: value });
             
           default:
-            return `未知配置项: ${configType}. 支持的配置项: url, key, model`;
+            return t('unknownConfigItem', language, { item: configType });
         }
       }
 
     case 'clear':
-      return '\n'.repeat(50) + (language === 'zh' ? '终端已清空' : 'Terminal cleared');
+      return '\n'.repeat(50) + t('terminalCleared', language);
 
     case 'exit':
-      return language === 'zh' ? '感谢使用AI侦探终端系统。再见！' : 'Thank you for using AI Detective Terminal System. Goodbye!';
+      return t('thankYouMessage', language);
 
     default:
       return t('unknownCommand', language, { cmd });
