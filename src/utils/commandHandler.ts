@@ -1,4 +1,3 @@
-
 import { GameState } from '../hooks/useGameState';
 import { generateCase, interrogateSuspect, generateCrimeScene } from './aiService';
 
@@ -204,5 +203,3 @@ ${accusedSuspect.name} 不是真凶。
       return `未知命令: ${cmd}. 输入 'help' 查看帮助`;
   }
 };
-```
-
