@@ -1,5 +1,6 @@
 import { GameState, Suspect, Evidence, ApiConfig } from '../hooks/useGameState';
 import { createSingleLineStreamingEffect } from './gameFragments';
+import { Language, t } from './i18n';
 
 // 流式响应处理函数
 export const streamLLMRequest = async (
@@ -278,7 +279,7 @@ const llmRequest = async (
 export const generateCase = async (
   config: ApiConfig, 
   onToken?: (token: string) => void,
-  language: 'zh' | 'en' = 'zh'
+  language: Language = 'zh'
 ): Promise<Partial<GameState>> => {
   const promptText = language === 'zh' ? 
     `你是一个专业的推理小说作家。请生成一个复杂的谋杀案件，包含以下要素：
@@ -327,13 +328,13 @@ Please return in JSON format, ensuring logical consistency and rich clues.`;
   // 如果有onToken回调，说明需要流式效果
   if (onToken) {
     // 显示案件生成的混淆信息流
-    onToken('\n=== 案件分析系统启动 ===\n');
+    onToken(t('caseAnalysisSystemStart', language));
     
     // 启动混淆的单行流式效果
     const streamingPromise = createSingleLineStreamingEffect(
       (text: string, isComplete: boolean) => {
         if (isComplete) {
-          onToken('\n案件档案生成完成！\n');
+          onToken(t('caseFileGenerationComplete', language));
         } else {
           // 清除当前行并显示新内容
           onToken(`\r${text}`);
@@ -371,7 +372,9 @@ Please return in JSON format, ensuring logical consistency and rich clues.`;
         solution: caseData.solution
       };
     } catch (error) {
-      throw new Error('案件生成失败：AI响应格式错误');
+      throw new Error(t('caseGenerationFailed', language, { 
+        error: error instanceof Error ? error.message : t('unknownError', language)
+      }));
     }
   } else {
     // 非流式模式，直接返回结果
@@ -396,7 +399,9 @@ Please return in JSON format, ensuring logical consistency and rich clues.`;
         solution: caseData.solution
       };
     } catch (error) {
-      throw new Error('案件生成失败：AI响应格式错误');
+      throw new Error(t('caseGenerationFailed', language, { 
+        error: error instanceof Error ? error.message : t('unknownError', language)
+      }));
     }
   }
 };
@@ -405,7 +410,7 @@ export const interrogateSuspect = async (
   suspect: Suspect, 
   gameState: GameState, 
   onToken?: (token: string) => void,
-  language: 'zh' | 'en' = 'zh'
+  language: Language = 'zh'
 ): Promise<string> => {
   const promptText = language === 'zh' ?
     `你正在审问嫌疑人 ${suspect.name}。
@@ -448,19 +453,13 @@ Please simulate this suspect answering the following questions. Answers should m
   // 如果有onToken回调，说明需要流式效果
   if (onToken) {
     // 显示审问准备的混淆信息流
-    const startMsg = language === 'zh' ? 
-      `\n=== 开始审问 ${suspect.name} ===\n` :
-      `\n=== Starting interrogation of ${suspect.name} ===\n`;
-    onToken(startMsg);
+    onToken(t('startInterrogation', language, { name: suspect.name }));
     
     // 启动混淆的单行流式效果
     const streamingPromise = createSingleLineStreamingEffect(
       (text: string, isComplete: boolean) => {
         if (isComplete) {
-          const recordingMsg = language === 'zh' ? 
-            '\n开始记录对话...\n\n' : 
-            '\nStarting conversation recording...\n\n';
-          onToken(recordingMsg);
+          onToken(t('startRecording', language));
         } else {
           // 清除当前行并显示新内容
           onToken(`\r${text}`);
@@ -482,10 +481,8 @@ Please simulate this suspect answering the following questions. Answers should m
     const response = await responsePromise;
     
     // 在审问结束后添加提示
-    const hintMsg = language === 'zh' ?
-      '\n\n提示: 注意观察回答中的矛盾和可疑之处\n输入其他命令继续调查，或审问其他嫌疑人\n' :
-      '\n\nHint: Pay attention to contradictions and suspicious details in the answers\nEnter other commands to continue investigation, or interrogate other suspects\n';
-    onToken(hintMsg);
+    const hintMsg = t('interrogationTip', language);
+    onToken(`\n\n${hintMsg}\n`);
     
     return response;
   } else {
@@ -497,7 +494,7 @@ Please simulate this suspect answering the following questions. Answers should m
 export const generateCrimeScene = async (
   gameState: GameState, 
   onToken?: (token: string) => void,
-  language: 'zh' | 'en' = 'zh'
+  language: Language = 'zh'
 ): Promise<string> => {
   const promptText = language === 'zh' ?
     `基于以下案件信息，详细描述犯罪现场的重现：

@@ -27,6 +27,12 @@ AI 侦探终端 v2.1.5 | 当前案件ID: #{{caseId}}
     caseRestored: '🔄 检测到未完成案件，已自动恢复',
     statusCommandText: '输入 \'status\' 查看当前案件状态',
     
+    // AI Service specific translations
+    caseAnalysisSystemStart: '\n=== 案件分析系统启动 ===\n',
+    caseFileGenerationComplete: '\n案件档案生成完成！\n',
+    startInterrogation: '\n=== 开始审问 {{name}} ===\n',
+    startRecording: '\n开始记录对话...\n\n',
+    
     // 案件信息
     caseInfo: `
 === 当前案件信息 ===
@@ -155,9 +161,10 @@ AI 侦探终端 v2.1.5 | 当前案件ID: #{{caseId}}
     crimeSceneRecreation: '=== 犯罪现场重现 ===',
     inProgress: '进行中',
     none: '无',
+    unknownError: '未知错误',
   },
   en: {
-    // System messages
+    // 系统消息
     systemInit: `
 ===============================================================================
                           █████╗ ██╗     ███████╗██████╗ 
@@ -182,7 +189,13 @@ Type 'new_case' to start a new case
     caseRestored: '🔄 Unfinished case detected, automatically restored',
     statusCommandText: 'Type \'status\' to view current case status',
     
-    // Case information
+    // AI Service specific translations
+    caseAnalysisSystemStart: '\n=== Case Analysis System Started ===\n',
+    caseFileGenerationComplete: '\nCase file generation complete!\n',
+    startInterrogation: '\n=== Starting interrogation of {{name}} ===\n',
+    startRecording: '\nStarting conversation recording...\n\n',
+    
+    // 案件信息
     caseInfo: `
 === Current Case Information ===
 Case Description: {{description}}
@@ -198,7 +211,7 @@ Available Operations:
   clear_case - Clear current case
 `,
     
-    // New case generation related translations
+    // 新增的案件生成相关翻译
     newCaseFile: '=== New Case File ===',
     caseId: 'Case ID',
     overview: 'Case Overview',
@@ -216,7 +229,7 @@ Available Operations:
   status - Check case status
   submit [ID] - Submit final conclusion`,
     
-    // Help information
+    // 帮助信息
     help: `
 Available Commands:
   new_case       - Generate new case
@@ -233,7 +246,7 @@ Available Commands:
   exit           - Exit system
 `,
     
-    // Status related
+    // 状态相关
     caseStatus: `
 === Case Status ===
 Case ID: #{{caseId}}
@@ -247,7 +260,7 @@ Progress Statistics:
 - Interrogated Suspects: {{interrogatedCount}}/{{totalSuspects}}
 - Collected Evidence: {{evidenceCount}} items`,
     
-    // Error and tip messages
+    // 错误和提示信息
     noCurrentCase: 'No case to clear currently',
     caseGenerationFailed: 'Case generation failed: {{error}}',
     relationshipWithVictim: 'Relationship with victim',
@@ -270,7 +283,7 @@ Progress Statistics:
     reexamineEvidence: 'Please re-examine the evidence and suspects\' testimonies for real clues.',
     continueInvestigation: 'Type \'interrogate [ID]\' to continue investigation',
     
-    // Configuration related
+    // 配置相关
     apiConfiguration: '=== API Configuration ===',
     endpoint: 'Endpoint',
     model: 'Model',
@@ -298,7 +311,7 @@ Common configuration examples:
     terminalCleared: 'Terminal cleared',
     thankYouMessage: 'Thank you for using AI Detective Terminal System. Goodbye!',
     
-    // Other common texts
+    // 其他常用文本
     processing: 'Processing',
     noActiveCase: 'No active case currently, please type "new_case" to generate a new case',
     caseCleared: 'Case data cleared!\nAPI configuration preserved.\n\nType \'new_case\' to start a new investigation',
@@ -310,6 +323,7 @@ Common configuration examples:
     crimeSceneRecreation: '=== Crime Scene Recreation ===',
     inProgress: 'In Progress',
     none: 'None',
+    unknownError: 'Unknown error',
   }
 };
 
