@@ -61,7 +61,7 @@ export const executeStreamingRequest = async (
     // }
     
     // 直接显示完整结果（临时）
-    onToken(streamingResult);
+    // onToken(streamingResult);
     
     // 如果有提示信息，显示提示
     if (tipMessage) {
