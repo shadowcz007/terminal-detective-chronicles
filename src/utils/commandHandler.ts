@@ -1,11 +1,12 @@
 
 import { GameState } from '../hooks/useGameState';
-import { generateCase, interrogateSuspect, generateCrimeScene, mockLLMRequest } from './aiService';
+import { generateCase, interrogateSuspect, generateCrimeScene } from './aiService';
 
 export const executeCommand = async (
   command: string, 
   gameState: GameState, 
-  updateGameState: (updates: Partial<GameState>) => void
+  updateGameState: (updates: Partial<GameState>) => void,
+  updateApiConfig: (config: Partial<GameState['apiConfig']>) => void
 ): Promise<string> => {
   const [cmd, ...args] = command.toLowerCase().split(' ');
 
@@ -19,26 +20,33 @@ export const executeCommand = async (
   evidence       - 查看证据档案
   recreate       - 生成犯罪现场重现
   submit [嫌疑人ID] - 提交最终结论
-  config         - 修改API设置
+  config         - 查看/修改API设置
+  config url [URL] - 设置API端点
+  config key [KEY] - 设置API密钥
+  config model [MODEL] - 设置模型
   clear          - 清空终端
   exit           - 退出系统
 `;
 
     case 'new_case':
-      const caseData = await generateCase();
-      updateGameState(caseData);
-      return `
+      try {
+        const caseData = await generateCase(gameState.apiConfig);
+        updateGameState(caseData);
+        return `
 新案件已生成！
 案件ID: #${caseData.caseId}
 ${caseData.caseDescription}
 
 受害者: ${caseData.victim}
-嫌疑人数量: ${caseData.suspects.length}
-初始证据: ${caseData.evidence.length}个
+嫌疑人数量: ${caseData.suspects?.length || 0}
+初始证据: ${caseData.evidence?.length || 0}个
 
 输入 'list_suspects' 查看嫌疑人信息
 输入 'evidence' 查看证据档案
 `;
+      } catch (error) {
+        return `案件生成失败: ${error instanceof Error ? error.message : '未知错误'}`;
+      }
 
     case 'list_suspects':
       if (gameState.suspects.length === 0) {
@@ -72,30 +80,38 @@ ${caseData.caseDescription}
         return '请指定有效的嫌疑人编号，例如: interrogate 1';
       }
       
-      const suspect = gameState.suspects[suspectIndex];
-      updateGameState({ currentInterrogation: suspect.id });
-      
-      const interrogationResult = await interrogateSuspect(suspect, gameState);
-      return `
+      try {
+        const suspect = gameState.suspects[suspectIndex];
+        updateGameState({ currentInterrogation: suspect.id });
+        
+        const interrogationResult = await interrogateSuspect(suspect, gameState);
+        return `
 === 审问记录: ${suspect.name} ===
 ${interrogationResult}
 
 提示: 注意观察回答中的矛盾和可疑之处
 输入其他命令继续调查，或审问其他嫌疑人
 `;
+      } catch (error) {
+        return `审问失败: ${error instanceof Error ? error.message : '未知错误'}`;
+      }
 
     case 'recreate':
       if (!gameState.caseDescription) {
         return '请先生成案件才能重现犯罪现场';
       }
       
-      const crimeScene = await generateCrimeScene(gameState);
-      return `
+      try {
+        const crimeScene = await generateCrimeScene(gameState);
+        return `
 === 犯罪现场重现 ===
 ${crimeScene}
 
 分析现场细节，寻找可疑之处...
 `;
+      } catch (error) {
+        return `现场重现失败: ${error instanceof Error ? error.message : '未知错误'}`;
+      }
 
     case 'submit':
       const submitIndex = parseInt(args[0]) - 1;
@@ -127,14 +143,53 @@ ${accusedSuspect.name} 不是真凶。
       }
 
     case 'config':
-      return `
+      if (args.length === 0) {
+        // 显示当前配置
+        const { apiConfig } = gameState;
+        const maskedKey = apiConfig.key ? `${apiConfig.key.substring(0, 10)}...` : '未设置';
+        return `
 === API 配置 ===
-当前端点: ${gameState.apiConfig.url}
-当前模型: ${gameState.apiConfig.model}
+端点: ${apiConfig.url}
+模型: ${apiConfig.model}
+密钥: ${maskedKey}
 
-注意: 此演示版本使用模拟AI响应
-在实际部署中，请配置真实的AI API密钥
+使用方法:
+  config url <API端点>    - 设置API端点
+  config key <API密钥>    - 设置API密钥
+  config model <模型名>   - 设置模型
+
+常用配置示例:
+  config url https://api.openai.com/v1/chat/completions
+  config key sk-xxx...
+  config model gpt-3.5-turbo
+
+提示: ${apiConfig.key ? '✅ 已配置API密钥，将使用真实AI' : '⚠️ 未配置API密钥，当前使用模拟AI'}
 `;
+      } else {
+        // 设置配置
+        const [configType, ...configValue] = args;
+        const value = configValue.join(' ');
+        
+        switch (configType) {
+          case 'url':
+            if (!value) return 'API端点不能为空';
+            updateApiConfig({ url: value });
+            return `API端点已设置为: ${value}`;
+            
+          case 'key':
+            if (!value) return 'API密钥不能为空';
+            updateApiConfig({ key: value });
+            return `API密钥已设置 (${value.substring(0, 10)}...)`;
+            
+          case 'model':
+            if (!value) return '模型名不能为空';
+            updateApiConfig({ model: value });
+            return `模型已设置为: ${value}`;
+            
+          default:
+            return `未知配置项: ${configType}. 支持的配置项: url, key, model`;
+        }
+      }
 
     case 'clear':
       return '\n'.repeat(50) + '终端已清空';

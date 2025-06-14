@@ -9,7 +9,7 @@ const Terminal = () => {
   const [isLoading, setIsLoading] = useState(false);
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { gameState, updateGameState } = useGameState();
+  const { gameState, updateGameState, updateApiConfig } = useGameState();
 
   useEffect(() => {
     // 显示启动动画
@@ -25,7 +25,9 @@ const Terminal = () => {
 AI DETECTIVE TERMINAL v2.1.5 | 当前案件ID: #${generateCaseId()}
 -------------------------------------------------------------------------------
 系统初始化完成... 
+${gameState.apiConfig.key ? '✅ AI模式: 真实API' : '⚠️ AI模式: 模拟演示'}
 输入 'help' 查看可用命令
+输入 'config' 配置API设置
 输入 'new_case' 开始新案件
 `;
     addToHistory(initMessage);
@@ -55,7 +57,7 @@ AI DETECTIVE TERMINAL v2.1.5 | 当前案件ID: #${generateCaseId()}
     setIsLoading(true);
 
     try {
-      const result = await executeCommand(command, gameState, updateGameState);
+      const result = await executeCommand(command, gameState, updateGameState, updateApiConfig);
       addToHistory(result);
     } catch (error) {
       addToHistory(`ERROR: ${error instanceof Error ? error.message : '未知错误'}`);

@@ -1,5 +1,56 @@
+import { GameState, Suspect, Evidence, ApiConfig } from '../hooks/useGameState';
 
-import { GameState, Suspect, Evidence } from '../hooks/useGameState';
+// 真实的LLM API请求函数
+export const realLLMRequest = async (prompt: string, apiConfig: ApiConfig): Promise<string> => {
+  if (!apiConfig.key.trim()) {
+    throw new Error('API密钥未配置，请先在config中设置');
+  }
+
+  if (!apiConfig.url.trim()) {
+    throw new Error('API端点未配置，请先在config中设置');
+  }
+
+  const options = {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiConfig.key}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: apiConfig.model,
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 2000
+    })
+  };
+
+  try {
+    const response = await fetch(apiConfig.url, options);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`API请求失败: ${response.status} ${response.statusText} - ${errorData.error?.message || '未知错误'}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error('API响应格式错误');
+    }
+
+    return data.choices[0].message.content;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(`网络请求失败: ${error}`);
+  }
+};
 
 // 模拟AI请求函数 - 在实际应用中替换为真实API调用
 export const mockLLMRequest = async (prompt: string): Promise<string> => {
@@ -100,7 +151,7 @@ export const mockLLMRequest = async (prompt: string): Promise<string> => {
 现场分析:
 • 死者倒在办公桌前，面朝阳台方向
 • 拆信刀插在胸前，角度表明凶手身高约1.7米
-• 阳台花瓶被打碎，疑似搏斗痕迹
+• 阳台花瓶被打碎，疑似搏斗痕迅
 • 办公桌上文件散乱，但电脑未被触碰
 • 门锁完好，内部反锁，凶手可能从阳台逃脱
 `;
@@ -109,9 +160,49 @@ export const mockLLMRequest = async (prompt: string): Promise<string> => {
   return '模拟AI响应：请检查提示词内容';
 };
 
-export const generateCase = async (): Promise<Partial<GameState>> => {
-  const prompt = `案件生成：创建一起谋杀案，包含受害者、3名嫌疑人和初始证据`;
-  const response = await mockLLMRequest(prompt);
+// 使用真实API或模拟API的请求函数
+const llmRequest = async (prompt: string, apiConfig: ApiConfig): Promise<string> => {
+  // 如果配置了API密钥，使用真实API，否则使用模拟API
+  if (apiConfig.key.trim()) {
+    return await realLLMRequest(prompt, apiConfig);
+  } else {
+    return await mockLLMRequest(prompt);
+  }
+};
+
+export const generateCase = async (apiConfig: ApiConfig): Promise<Partial<GameState>> => {
+  const prompt = `作为犯罪剧本生成器，请创建一起谋杀案，包含：
+1. 50字内的案件背景描述
+2. 受害者姓名
+3. 3名嫌疑人，每人包含：姓名、职业、与死者关系、犯罪动机、不在场证明
+4. 2个重要证据线索
+
+请以JSON格式返回，结构如下：
+{
+  "victim": "受害者姓名",
+  "description": "案件背景描述",
+  "suspects": [
+    {
+      "id": "suspect_1",
+      "name": "嫌疑人姓名",
+      "occupation": "职业",
+      "relationship": "与死者关系",
+      "motive": "犯罪动机",
+      "alibi": "不在场证明"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "evidence_1",
+      "name": "证据名称",
+      "description": "证据描述",
+      "location": "发现地点"
+    }
+  ],
+  "solution": "suspect_1"
+}`;
+  
+  const response = await llmRequest(prompt, apiConfig);
   
   try {
     const caseData = JSON.parse(response);
@@ -129,26 +220,38 @@ export const generateCase = async (): Promise<Partial<GameState>> => {
 };
 
 export const interrogateSuspect = async (suspect: Suspect, gameState: GameState): Promise<string> => {
-  const prompt = `审问嫌疑人${suspect.name}，根据其动机"${suspect.motive}"生成回答`;
+  const prompt = `你正在扮演嫌疑人${suspect.name}（${suspect.occupation}）。
+背景：${gameState.caseDescription}
+你的动机：${suspect.motive}
+你的不在场证明：${suspect.alibi}
+
+请回答侦探的问题。注意：
+1. 如果问题涉及你的犯罪动机，要试图隐瞒或转移话题
+2. 保持角色一致性，符合你的身份和背景
+3. 回答要自然，不要过于正式
+4. 每次回答控制在1-2句话
+
+侦探现在要问你几个问题，请逐一回答：
+1. 案发当晚你在哪里？
+2. 你和死者的关系如何？
+3. 你有什么要隐瞒的吗？
+4. 有人能证明你的不在场证明吗？`;
   
-  const questions = [
-    '案发当晚你在哪里？',
-    '你和死者的关系如何？',
-    '你有什么要隐瞒的吗？',
-    '有人能证明你的不在场证明吗？'
-  ];
-  
-  let interrogationLog = '';
-  
-  for (const question of questions) {
-    const answer = await mockLLMRequest(prompt + question);
-    interrogationLog += `\n侦探: ${question}\n${suspect.name}: ${answer}\n`;
-  }
-  
-  return interrogationLog;
+  return await llmRequest(prompt, gameState.apiConfig);
 };
 
 export const generateCrimeScene = async (gameState: GameState): Promise<string> => {
-  const prompt = `根据案件"${gameState.caseDescription}"生成犯罪现场ASCII图`;
-  return await mockLLMRequest(prompt);
+  const prompt = `根据以下案件信息生成犯罪现场ASCII示意图：
+案件：${gameState.caseDescription}
+受害者：${gameState.victim}
+证据：${gameState.evidence.map(e => `${e.name}（${e.location}）`).join('、')}
+
+要求：
+1. 使用纯文本字符绘制二维俯视图
+2. 包含关键物品和证据位置
+3. 标注尸体位置和可疑痕迹
+4. 宽度不超过80字符
+5. 添加现场分析说明`;
+  
+  return await llmRequest(prompt, gameState.apiConfig);
 };
