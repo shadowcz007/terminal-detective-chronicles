@@ -1,4 +1,5 @@
 import { GameState } from '../hooks/useGameState';
+import { Language, t } from '../utils/i18n';
 import { generateCase, interrogateSuspect, generateCrimeScene } from './aiService';
 
 export const executeCommand = async (
@@ -6,7 +7,8 @@ export const executeCommand = async (
   gameState: GameState, 
   updateGameState: (updates: Partial<GameState>) => void,
   updateApiConfig: (config: Partial<GameState['apiConfig']>) => void,
-  onStreamToken?: (token: string) => void
+  onStreamToken?: (token: string) => void,
+  language: Language = 'zh'
 ): Promise<string> => {
   const parts = command.split(' ');
   const cmd = parts[0].toLowerCase();
@@ -14,30 +16,18 @@ export const executeCommand = async (
 
   switch (cmd) {
     case 'help':
-      return `
-可用命令：
-  new_case       - 生成新案件
-  list_suspects  - 显示嫌疑人名单
-  interrogate [ID] - 审问嫌疑人 (例: interrogate 1)
-  evidence       - 查看证据档案
-  recreate       - 生成犯罪现场重现
-  submit [嫌疑人ID] - 提交最终结论
-  status         - 查看当前案件状态
-  clear_case     - 清除当前案件数据
-  config         - 查看/修改API设置
-  config url [URL] - 设置API端点
-  config key [KEY] - 设置API密钥
-  config model [MODEL] - 设置模型
-  clear          - 清空终端
-  exit           - 退出系统
-`;
+      return t('help', language);
+
+    case 'lang':
+      // 语言切换命令 - 这个实际上由Terminal组件处理，这里只是返回确认信息
+      return t('languageSwitched', language);
 
     case 'status':
       if (!gameState.caseId) {
-        return '当前没有活跃案件，请输入 "new_case" 生成新案件';
+        return language === 'zh' ? '当前没有活跃案件，请输入 "new_case" 生成新案件' : 'No active case. Please input "new_case" to create a new case.';
       }
       
-      return `
+      const statusText = language === 'zh' ? `
 === 案件状态 ===
 案件ID: #${gameState.caseId}
 案件描述: ${gameState.caseDescription}
@@ -48,12 +38,24 @@ export const executeCommand = async (
 
 进度统计:
 - 已审问嫌疑人: ${gameState.suspects.filter(s => s.id === gameState.currentInterrogation).length}/${gameState.suspects.length}
-- 收集证据: ${gameState.evidence.length}个
-`;
+- 收集证据: ${gameState.evidence.length}个` : `
+=== Case Status ===
+Case ID: #${gameState.caseId}
+Case Description: ${gameState.caseDescription}
+Victim: ${gameState.victim}
+Number of Suspects: ${gameState.suspects.length}
+Number of Evidence: ${gameState.evidence.length}
+Current Interrogation: ${gameState.currentInterrogation ? 'In Progress' : 'None'}
+
+Progress Statistics:
+- Interrogated Suspects: ${gameState.suspects.filter(s => s.id === gameState.currentInterrogation).length}/${gameState.suspects.length}
+- Collected Evidence: ${gameState.evidence.length} items`;
+      
+      return statusText;
 
     case 'clear_case':
       if (!gameState.caseId) {
-        return '当前没有案件需要清除';
+        return language === 'zh' ? '当前没有案件需要清除' : 'No case to clear currently';
       }
       
       // 清除案件数据但保留API配置
@@ -67,46 +69,64 @@ export const executeCommand = async (
         currentInterrogation: undefined
       });
       
-      return `
-案件数据已清除！
-API配置已保留。
-
-输入 'new_case' 开始新的案件调查
-`;
+      return t('caseCleared', language);
 
     case 'new_case':
       try {
-        const caseData = await generateCase(gameState.apiConfig, onStreamToken);
+        const caseData = await generateCase(gameState.apiConfig, onStreamToken, language);
         updateGameState(caseData);
         
         // 生成详细的案件信息显示
+        const labels = language === 'zh' ? {
+          newCase: '=== 新案件档案 ===',
+          caseId: '案件ID',
+          overview: '案件概述',
+          victim: '受害者',
+          suspects: '=== 嫌疑人概况 ===',
+          relationship: '关系',
+          evidence: '=== 初步证据 ===',
+          location: '位置'
+        } : {
+          newCase: '=== New Case File ===',
+          caseId: 'Case ID',
+          overview: 'Case Overview',
+          victim: 'Victim',
+          suspects: '=== Suspect Overview ===',
+          relationship: 'Relationship',
+          evidence: '=== Initial Evidence ===',
+          location: 'Location'
+        };
+        
         let caseInfo = `
-=== 新案件档案 ===
-案件ID: #${caseData.caseId}
-案件概述: ${caseData.caseDescription}
-受害者: ${caseData.victim}
+${labels.newCase}
+${labels.caseId}: #${caseData.caseId}
+${labels.overview}: ${caseData.caseDescription}
+${labels.victim}: ${caseData.victim}
 
-=== 嫌疑人概况 ===`;
+${labels.suspects}`;
         
         caseData.suspects?.forEach((suspect, index) => {
           caseInfo += `\n[${index + 1}] ${suspect.name} - ${suspect.occupation}`;
-          caseInfo += `\n    关系: ${suspect.relationship}`;
+          caseInfo += `\n    ${labels.relationship}: ${suspect.relationship}`;
         });
         
-        caseInfo += `\n\n=== 初步证据 ===`;
+        caseInfo += `\n\n${labels.evidence}`;
         caseData.evidence?.forEach((evidence, index) => {
           caseInfo += `\n[${index + 1}] ${evidence.name}`;
-          caseInfo += `\n    位置: ${evidence.location}`;
+          caseInfo += `\n    ${labels.location}: ${evidence.location}`;
         });
         
         return caseInfo;
       } catch (error) {
-        return `案件生成失败: ${error instanceof Error ? error.message : '未知错误'}`;
+        const errorMsg = language === 'zh' ? 
+          `案件生成失败: ${error instanceof Error ? error.message : '未知错误'}` :
+          `Case generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+        return errorMsg;
       }
 
     case 'list_suspects':
       if (gameState.suspects.length === 0) {
-        return '当前没有案件，请先输入 "new_case" 生成案件';
+        return language === 'zh' ? '当前没有案件，请先输入 "new_case" 生成案件' : 'No suspects. Please create a case first.';
       }
       
       let suspectList = '\n=== 嫌疑人名单 ===\n';
@@ -119,7 +139,7 @@ API配置已保留。
 
     case 'evidence':
       if (gameState.evidence.length === 0) {
-        return '当前没有证据，请先输入 "new_case" 生成案件';
+        return language === 'zh' ? '当前没有证据，请先输入 "new_case" 生成案件' : 'No evidence. Please create a case first.';
       }
       
       let evidenceList = '\n=== 证据档案 ===\n';
@@ -133,7 +153,7 @@ API配置已保留。
     case 'interrogate':
       const suspectIndex = parseInt(args[0]) - 1;
       if (isNaN(suspectIndex) || !gameState.suspects[suspectIndex]) {
-        return '请指定有效的嫌疑人编号，例如: interrogate 1';
+        return language === 'zh' ? '请指定有效的嫌疑人编号，例如: interrogate 1' : 'Please specify a valid suspect ID, e.g., interrogate 1.';
       }
       
       try {
@@ -156,12 +176,12 @@ ${interrogationResult}
 `;
         }
       } catch (error) {
-        return `审问失败: ${error instanceof Error ? error.message : '未知错误'}`;
+        return language === 'zh' ? `审问失败: ${error instanceof Error ? error.message : '未知错误'}` : `Interrogation failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
       }
 
     case 'recreate':
       if (!gameState.caseDescription) {
-        return '请先生成案件才能重现犯罪现场';
+        return language === 'zh' ? '请先生成案件才能重现犯罪现场' : 'Please generate a case first to recreate the crime scene.';
       }
       
       try {
@@ -173,13 +193,13 @@ ${crimeScene}
 分析现场细节，寻找可疑之处...
 `;
       } catch (error) {
-        return `现场重现失败: ${error instanceof Error ? error.message : '未知错误'}`;
+        return language === 'zh' ? `现场重现失败: ${error instanceof Error ? error.message : '未知错误'}` : `Scene recreation failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
       }
 
     case 'submit':
       const submitIndex = parseInt(args[0]) - 1;
       if (isNaN(submitIndex) || !gameState.suspects[submitIndex]) {
-        return '请指定要指控的嫌疑人编号，例如: submit 2';
+        return language === 'zh' ? '请指定要指控的嫌疑人编号，例如: submit 2' : 'Please specify the suspect ID to accuse, e.g., submit 2.';
       }
       
       const accusedSuspect = gameState.suspects[submitIndex];
@@ -256,12 +276,12 @@ ${accusedSuspect.name} 不是真凶。
       }
 
     case 'clear':
-      return '\n'.repeat(50) + '终端已清空';
+      return '\n'.repeat(50) + (language === 'zh' ? '终端已清空' : 'Terminal cleared');
 
     case 'exit':
-      return '感谢使用AI侦探终端系统。再见！';
+      return language === 'zh' ? '感谢使用AI侦探终端系统。再见！' : 'Thank you for using AI Detective Terminal System. Goodbye!';
 
     default:
-      return `未知命令: ${cmd}. 输入 'help' 查看帮助`;
+      return t('unknownCommand', language, { cmd });
   }
 };

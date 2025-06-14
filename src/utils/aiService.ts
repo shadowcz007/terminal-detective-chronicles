@@ -276,40 +276,54 @@ const llmRequest = async (
 };
 
 export const generateCase = async (
-  apiConfig: ApiConfig, 
-  onToken?: (token: string) => void
+  config: ApiConfig, 
+  onToken?: (token: string) => void,
+  language: 'zh' | 'en' = 'zh'
 ): Promise<Partial<GameState>> => {
-  const prompt = `作为犯罪剧本生成器，请创建一起谋杀案，包含：
-1. 50字内的案件背景描述
-2. 受害者姓名
-3. 3名嫌疑人，每人包含：姓名、职业、与死者关系、犯罪动机、不在场证明
-4. 2个重要证据线索
+  const promptText = language === 'zh' ? 
+    `你是一个专业的推理小说作家。请生成一个复杂的谋杀案件，包含以下要素：
 
-请以JSON格式返回，结构如下：
-{
-  "victim": "受害者姓名",
-  "description": "案件背景描述",
-  "suspects": [
-    {
-      "id": "suspect_1",
-      "name": "嫌疑人姓名",
-      "occupation": "职业",
-      "relationship": "与死者关系",
-      "motive": "犯罪动机",
-      "alibi": "不在场证明"
-    }
-  ],
-  "evidence": [
-    {
-      "id": "evidence_1",
-      "name": "证据名称",
-      "description": "证据描述",
-      "location": "发现地点"
-    }
-  ],
-  "solution": "suspect_1"
-}`;
-  
+1. 案件基本信息：
+   - 案件ID（格式：MH + 年份后两位 + 6位随机字符）
+   - 案件简述（2-3句话）
+   - 受害者姓名和身份
+
+2. 嫌疑人信息（3-4个）：
+   - 姓名、职业
+   - 与死者的关系
+   - 表面动机
+   - 不在场证明
+
+3. 关键证据（3-5个）：
+   - 证据名称
+   - 发现地点
+   - 详细描述
+
+4. 真相：指定真正的凶手（从嫌疑人中选择）
+
+请用JSON格式返回，确保逻辑合理、线索丰富。` :
+    `You are a professional mystery novel writer. Please generate a complex murder case with the following elements:
+
+1. Basic case information:
+   - Case ID (format: MH + last two digits of year + 6 random characters)
+   - Case summary (2-3 sentences)
+   - Victim's name and identity
+
+2. Suspect information (3-4 people):
+   - Name, occupation
+   - Relationship with the deceased
+   - Apparent motive
+   - Alibi
+
+3. Key evidence (3-5 items):
+   - Evidence name
+   - Discovery location
+   - Detailed description
+
+4. Truth: Specify the real culprit (chosen from suspects)
+
+Please return in JSON format, ensuring logical consistency and rich clues.`;
+
   // 如果有onToken回调，说明需要流式效果
   if (onToken) {
     // 显示案件生成的混淆信息流
@@ -329,7 +343,7 @@ export const generateCase = async (
     );
     
     // 同时在后台获取真实数据（不显示给用户）
-    const responsePromise = llmRequest(prompt, apiConfig);
+    const responsePromise = llmRequest(promptText, config);
     
     // 等待流式效果完成
     await streamingPromise;
@@ -361,7 +375,7 @@ export const generateCase = async (
     }
   } else {
     // 非流式模式，直接返回结果
-    const response = await llmRequest(prompt, apiConfig);
+    const response = await llmRequest(promptText, config);
     
     try {
       let jsonContent = response;
@@ -389,36 +403,64 @@ export const generateCase = async (
 
 export const interrogateSuspect = async (
   suspect: Suspect, 
-  gameState: GameState,
-  onToken?: (token: string) => void
+  gameState: GameState, 
+  onToken?: (token: string) => void,
+  language: 'zh' | 'en' = 'zh'
 ): Promise<string> => {
-  const prompt = `你正在扮演嫌疑人${suspect.name}（${suspect.occupation}）。
-背景：${gameState.caseDescription}
-你的动机：${suspect.motive}
-你的不在场证明：${suspect.alibi}
+  const promptText = language === 'zh' ?
+    `你正在审问嫌疑人 ${suspect.name}。
 
-请回答侦探的问题。注意：
-1. 如果问题涉及你的犯罪动机，要试图隐瞒或转移话题
-2. 保持角色一致性，符合你的身份和背景
-3. 回答要自然，不要过于正式
-4. 每次回答控制在1-2句话
+案件背景：${gameState.caseDescription}
+受害者：${gameState.victim}
 
-侦探现在要问你几个问题，请逐一回答：
-1. 案发当晚你在哪里？
-2. 你和死者的关系如何？
+嫌疑人信息：
+- 姓名：${suspect.name}
+- 职业：${suspect.occupation}  
+- 与死者关系：${suspect.relationship}
+- 动机：${suspect.motive}
+- 不在场证明：${suspect.alibi}
+
+请模拟这个嫌疑人回答以下问题，回答要符合人物性格，可能会有所隐瞒或撒谎：
+
+1. 你在案发时间在哪里？
+2. 你和死者最后一次见面是什么时候？
 3. 你有什么要隐瞒的吗？
-4. 有人能证明你的不在场证明吗？`;
+4. 有人能证明你的不在场证明吗？` :
+    `You are interrogating suspect ${suspect.name}.
+
+Case background: ${gameState.caseDescription}
+Victim: ${gameState.victim}
+
+Suspect information:
+- Name: ${suspect.name}
+- Occupation: ${suspect.occupation}
+- Relationship with deceased: ${suspect.relationship}
+- Motive: ${suspect.motive}
+- Alibi: ${suspect.alibi}
+
+Please simulate this suspect answering the following questions. Answers should match the character's personality and may involve concealment or lies:
+
+1. Where were you at the time of the incident?
+2. When was the last time you saw the deceased?
+3. Is there anything you're hiding?
+4. Can anyone verify your alibi?`;
   
   // 如果有onToken回调，说明需要流式效果
   if (onToken) {
     // 显示审问准备的混淆信息流
-    onToken(`\n=== 开始审问 ${suspect.name} ===\n`);
+    const startMsg = language === 'zh' ? 
+      `\n=== 开始审问 ${suspect.name} ===\n` :
+      `\n=== Starting interrogation of ${suspect.name} ===\n`;
+    onToken(startMsg);
     
     // 启动混淆的单行流式效果
     const streamingPromise = createSingleLineStreamingEffect(
       (text: string, isComplete: boolean) => {
         if (isComplete) {
-          onToken('\n开始记录对话...\n\n');
+          const recordingMsg = language === 'zh' ? 
+            '\n开始记录对话...\n\n' : 
+            '\nStarting conversation recording...\n\n';
+          onToken(recordingMsg);
         } else {
           // 清除当前行并显示新内容
           onToken(`\r${text}`);
@@ -428,7 +470,7 @@ export const interrogateSuspect = async (
     );
     
     // 同时在后台获取真实数据
-    const responsePromise = llmRequest(prompt, gameState.apiConfig, (token: string) => {
+    const responsePromise = llmRequest(promptText, gameState.apiConfig, (token: string) => {
       // 在流式效果完成后开始打字机效果
       onToken(token);
     });
@@ -440,31 +482,56 @@ export const interrogateSuspect = async (
     const response = await responsePromise;
     
     // 在审问结束后添加提示
-    onToken('\n\n提示: 注意观察回答中的矛盾和可疑之处');
-    onToken('\n输入其他命令继续调查，或审问其他嫌疑人\n');
+    const hintMsg = language === 'zh' ?
+      '\n\n提示: 注意观察回答中的矛盾和可疑之处\n输入其他命令继续调查，或审问其他嫌疑人\n' :
+      '\n\nHint: Pay attention to contradictions and suspicious details in the answers\nEnter other commands to continue investigation, or interrogate other suspects\n';
+    onToken(hintMsg);
     
     return response;
   } else {
     // 非流式模式
-    return await llmRequest(prompt, gameState.apiConfig);
+    return await llmRequest(promptText, gameState.apiConfig);
   }
 };
 
 export const generateCrimeScene = async (
-  gameState: GameState,
-  onToken?: (token: string) => void
+  gameState: GameState, 
+  onToken?: (token: string) => void,
+  language: 'zh' | 'en' = 'zh'
 ): Promise<string> => {
-  const prompt = `根据以下案件信息生成犯罪现场ASCII示意图：
+  const promptText = language === 'zh' ?
+    `基于以下案件信息，详细描述犯罪现场的重现：
+
 案件：${gameState.caseDescription}
 受害者：${gameState.victim}
-证据：${gameState.evidence.map(e => `${e.name}（${e.location}）`).join('、')}
 
-要求：
-1. 使用纯文本字符绘制二维俯视图
-2. 包含关键物品和证据位置
-3. 标注尸体位置和可疑痕迹
-4. 宽度不超过80字符
-5. 添加现场分析说明`;
-  
-  return await llmRequest(prompt, gameState.apiConfig, onToken);
+嫌疑人：
+${gameState.suspects.map(s => `- ${s.name}: ${s.relationship}`).join('\n')}
+
+证据：
+${gameState.evidence.map(e => `- ${e.name} (${e.location}): ${e.description}`).join('\n')}
+
+请生成一个详细的犯罪现场重现，包括：
+1. 现场环境描述
+2. 事件发生过程推测
+3. 关键细节分析
+4. 可疑之处指出` :
+    `Based on the following case information, provide a detailed description of the crime scene recreation:
+
+Case: ${gameState.caseDescription}
+Victim: ${gameState.victim}
+
+Suspects:
+${gameState.suspects.map(s => `- ${s.name}: ${s.relationship}`).join('\n')}
+
+Evidence:
+${gameState.evidence.map(e => `- ${e.name} (${e.location}): ${e.description}`).join('\n')}
+
+Please generate a detailed crime scene recreation including:
+1. Scene environment description
+2. Speculation on how events unfolded
+3. Key detail analysis
+4. Identification of suspicious elements`;
+
+  return await llmRequest(promptText, gameState.apiConfig, onToken);
 };

@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useGameState } from '../hooks/useGameState';
+import { useLanguage } from '../hooks/useLanguage';
 import { executeCommand } from '../utils/commandHandler';
+import { t } from '../utils/i18n';
+import { Switch } from '@/components/ui/switch';
 
 const Terminal = () => {
   const [input, setInput] = useState('');
@@ -8,56 +11,41 @@ const Terminal = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentResponse, setCurrentResponse] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
-  const [loadingText, setLoadingText] = useState(''); // 新增：专门处理loading文本
+  const [loadingText, setLoadingText] = useState('');
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { gameState, updateGameState, updateApiConfig } = useGameState();
+  const { language, toggleLanguage } = useLanguage();
 
   useEffect(() => {
     // 检查是否有保存的案件
     const hasExistingCase = gameState.caseId && gameState.caseDescription;
     
     // 显示启动动画
-    const initMessage = `
-===============================================================================
-                          █████╗ ██╗     ███████╗██████╗ 
-                         ██╔══██╗██║     ██╔════╝██╔══██╗
-                         ███████║██║     █████╗  ██║  ██║
-                         ██╔══██║██║     ██╔══╝  ██║  ██║
-                         ██║  ██║███████╗███████╗██████╔╝
-                         ╚═╝  ╚═╝╚══════╝╚══════╝╚═════╝ 
-===============================================================================
-AI DETECTIVE TERMINAL v2.1.5 | 当前案件ID: #${hasExistingCase ? gameState.caseId : generateCaseId()}
--------------------------------------------------------------------------------
-系统初始化完成... 
-${gameState.apiConfig.key ? '✅ AI模式: 真实API (支持流式传输)' : '⚠️ AI模式: 模拟演示'}
-${hasExistingCase ? '🔄 检测到未完成案件，已自动恢复' : ''}
-输入 'help' 查看可用命令
-输入 'config' 配置API设置
-输入 'new_case' 开始新案件
-${hasExistingCase ? '输入 \'status\' 查看当前案件状态' : ''}
-`;
+    const apiStatus = gameState.apiConfig.key ? t('aiModeReal', language) : t('aiModeDemo', language);
+    const caseStatus = hasExistingCase ? t('caseRestored', language) : '';
+    const statusCommand = hasExistingCase ? t('statusCommandText', language) : '';
+    
+    const initMessage = t('systemInit', language, {
+      caseId: hasExistingCase ? gameState.caseId : generateCaseId(),
+      apiStatus,
+      caseStatus,
+      statusCommand
+    });
+    
     addToHistory(initMessage);
 
     // 如果有现有案件，显示案件信息
     if (hasExistingCase) {
-      const caseInfo = `
-=== 当前案件信息 ===
-案件描述: ${gameState.caseDescription}
-受害者: ${gameState.victim}
-嫌疑人数量: ${gameState.suspects.length}
-证据数量: ${gameState.evidence.length}
-
-可用操作：
-  list_suspects - 查看嫌疑人
-  evidence - 查看证据
-  recreate - 重现现场
-  interrogate [ID] - 审问嫌疑人
-  clear_case - 清除当前案件
-`;
+      const caseInfo = t('caseInfo', language, {
+        description: gameState.caseDescription,
+        victim: gameState.victim,
+        suspectCount: gameState.suspects.length.toString(),
+        evidenceCount: gameState.evidence.length.toString()
+      });
       addToHistory(caseInfo);
     }
-  }, []);
+  }, [language]); // 添加 language 依赖，语言切换时重新初始化
 
   useEffect(() => {
     if (terminalRef.current) {
@@ -106,7 +94,8 @@ ${hasExistingCase ? '输入 \'status\' 查看当前案件状态' : ''}
           gameState, 
           updateGameState, 
           updateApiConfig,
-          handleStreamToken
+          handleStreamToken,
+          language // 传递语言参数
         );
         
         // 流式响应完成后，将当前响应添加到历史记录
@@ -125,34 +114,53 @@ ${hasExistingCase ? '输入 \'status\' 查看当前案件状态' : ''}
 
         // 在案件生成后显示操作提示
         if (command.toLowerCase().startsWith('new_case')) {
-          addToHistory(`
+          const operations = language === 'zh' ? `
 可用操作：
   list_suspects - 查看嫌疑人详情
   evidence - 查看证据档案  
   recreate - 重现犯罪现场
   interrogate [ID] - 审问嫌疑人 (例: interrogate 1)
   status - 查看案件状态
-  submit [ID] - 提交最终结论`);
+  submit [ID] - 提交最终结论` : `
+Available Operations:
+  list_suspects - View suspect details
+  evidence - View evidence files
+  recreate - Recreate crime scene  
+  interrogate [ID] - Interrogate suspect (e.g: interrogate 1)
+  status - Check case status
+  submit [ID] - Submit final conclusion`;
+          addToHistory(operations);
         }
       } else {
         // 非流式命令或未配置API密钥
-        const result = await executeCommand(command, gameState, updateGameState, updateApiConfig);
+        const result = await executeCommand(command, gameState, updateGameState, updateApiConfig, undefined, language);
         addToHistory(result);
         
         // 在案件生成后显示操作提示（非流式模式）
         if (command.toLowerCase().startsWith('new_case')) {
-          addToHistory(`
+          const operations = language === 'zh' ? `
 可用操作：
   list_suspects - 查看嫌疑人详情
   evidence - 查看证据档案  
   recreate - 重现犯罪现场
   interrogate [ID] - 审问嫌疑人 (例: interrogate 1)
   status - 查看案件状态
-  submit [ID] - 提交最终结论`);
+  submit [ID] - 提交最终结论` : `
+Available Operations:
+  list_suspects - View suspect details
+  evidence - View evidence files
+  recreate - Recreate crime scene  
+  interrogate [ID] - Interrogate suspect (e.g: interrogate 1)
+  status - Check case status
+  submit [ID] - Submit final conclusion`;
+          addToHistory(operations);
         }
       }
     } catch (error) {
-      addToHistory(`ERROR: ${error instanceof Error ? error.message : '未知错误'}`);
+      const errorMsg = language === 'zh' ? 
+        `ERROR: ${error instanceof Error ? error.message : '未知错误'}` :
+        `ERROR: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      addToHistory(errorMsg);
     }
 
     setIsLoading(false);
@@ -168,6 +176,19 @@ ${hasExistingCase ? '输入 \'status\' 查看当前案件状态' : ''}
 
   return (
     <div className="h-screen flex flex-col p-4 bg-black text-green-400 font-mono">
+      {/* 语言切换开关 */}
+      <div className="flex justify-end mb-2">
+        <div className="flex items-center space-x-2 text-xs">
+          <span className={language === 'zh' ? 'text-green-400' : 'text-gray-500'}>中</span>
+          <Switch
+            checked={language === 'en'}
+            onCheckedChange={toggleLanguage}
+            className="data-[state=checked]:bg-green-600"
+          />
+          <span className={language === 'en' ? 'text-green-400' : 'text-gray-500'}>EN</span>
+        </div>
+      </div>
+      
       <div 
         ref={terminalRef}
         className="flex-1 overflow-y-auto mb-4 whitespace-pre-wrap text-sm leading-relaxed"
@@ -200,7 +221,7 @@ ${hasExistingCase ? '输入 \'status\' 查看当前案件状态' : ''}
         
         {isLoading && !isStreaming && !loadingText && (
           <div className="flex items-center">
-            <span className="mr-2">处理中</span>
+            <span className="mr-2">{t('processing', language)}</span>
             <div className="flex space-x-1">
               <div className="w-1 h-1 bg-green-400 rounded-full animate-pulse"></div>
               <div className="w-1 h-1 bg-green-400 rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
