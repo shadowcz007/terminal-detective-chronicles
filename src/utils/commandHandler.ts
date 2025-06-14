@@ -23,12 +23,56 @@ export const executeCommand = async (
   evidence       - 查看证据档案
   recreate       - 生成犯罪现场重现
   submit [嫌疑人ID] - 提交最终结论
+  status         - 查看当前案件状态
+  clear_case     - 清除当前案件数据
   config         - 查看/修改API设置
   config url [URL] - 设置API端点
   config key [KEY] - 设置API密钥
   config model [MODEL] - 设置模型
   clear          - 清空终端
   exit           - 退出系统
+`;
+
+    case 'status':
+      if (!gameState.caseId) {
+        return '当前没有活跃案件，请输入 "new_case" 生成新案件';
+      }
+      
+      return `
+=== 案件状态 ===
+案件ID: #${gameState.caseId}
+案件描述: ${gameState.caseDescription}
+受害者: ${gameState.victim}
+嫌疑人数量: ${gameState.suspects.length}
+证据数量: ${gameState.evidence.length}
+当前审问: ${gameState.currentInterrogation ? '进行中' : '无'}
+
+进度统计:
+- 已审问嫌疑人: ${gameState.suspects.filter(s => s.id === gameState.currentInterrogation).length}/${gameState.suspects.length}
+- 收集证据: ${gameState.evidence.length}个
+`;
+
+    case 'clear_case':
+      if (!gameState.caseId) {
+        return '当前没有案件需要清除';
+      }
+      
+      // 清除案件数据但保留API配置
+      updateGameState({
+        caseId: '',
+        caseDescription: '',
+        victim: '',
+        suspects: [],
+        evidence: [],
+        solution: '',
+        currentInterrogation: undefined
+      });
+      
+      return `
+案件数据已清除！
+API配置已保留。
+
+输入 'new_case' 开始新的案件调查
 `;
 
     case 'new_case':

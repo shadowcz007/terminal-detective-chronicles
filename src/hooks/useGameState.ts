@@ -40,47 +40,69 @@ const DEFAULT_CONFIG: ApiConfig = {
   model: 'gpt-3.5-turbo'
 };
 
-// 从本地存储加载配置
-const loadApiConfig = (): ApiConfig => {
+// 从本地存储加载完整游戏状态
+const loadGameState = (): GameState => {
   try {
-    const saved = localStorage.getItem('ai-detective-config');
-    if (saved) {
-      return { ...DEFAULT_CONFIG, ...JSON.parse(saved) };
+    const savedState = localStorage.getItem('ai-detective-game-state');
+    const savedConfig = localStorage.getItem('ai-detective-config');
+    
+    if (savedState) {
+      const gameState = JSON.parse(savedState);
+      // 如果有单独保存的配置，优先使用
+      if (savedConfig) {
+        gameState.apiConfig = { ...DEFAULT_CONFIG, ...JSON.parse(savedConfig) };
+      }
+      return gameState;
     }
+    
+    // 如果没有完整状态，但有配置，则创建新状态但保留配置
+    const apiConfig = savedConfig ? { ...DEFAULT_CONFIG, ...JSON.parse(savedConfig) } : DEFAULT_CONFIG;
+    
+    return {
+      caseId: '',
+      caseDescription: '',
+      victim: '',
+      suspects: [],
+      evidence: [],
+      solution: '',
+      apiConfig,
+      currentInterrogation: undefined
+    };
   } catch (error) {
-    console.error('Failed to load config from localStorage:', error);
+    console.error('Failed to load game state from localStorage:', error);
+    return {
+      caseId: '',
+      caseDescription: '',
+      victim: '',
+      suspects: [],
+      evidence: [],
+      solution: '',
+      apiConfig: DEFAULT_CONFIG,
+      currentInterrogation: undefined
+    };
   }
-  return DEFAULT_CONFIG;
 };
 
-// 保存配置到本地存储
-const saveApiConfig = (config: ApiConfig) => {
+// 保存完整游戏状态到本地存储
+const saveGameState = (gameState: GameState) => {
   try {
-    localStorage.setItem('ai-detective-config', JSON.stringify(config));
+    // 保存完整游戏状态
+    localStorage.setItem('ai-detective-game-state', JSON.stringify(gameState));
+    // 同时单独保存API配置，保持兼容性
+    localStorage.setItem('ai-detective-config', JSON.stringify(gameState.apiConfig));
   } catch (error) {
-    console.error('Failed to save config to localStorage:', error);
+    console.error('Failed to save game state to localStorage:', error);
   }
 };
 
 export const useGameState = () => {
-  const [gameState, setGameState] = useState<GameState>({
-    caseId: '',
-    caseDescription: '',
-    victim: '',
-    suspects: [],
-    evidence: [],
-    solution: '',
-    apiConfig: loadApiConfig(),
-    currentInterrogation: undefined
-  });
+  const [gameState, setGameState] = useState<GameState>(loadGameState);
 
   const updateGameState = (updates: Partial<GameState>) => {
     setGameState(prev => {
       const newState = { ...prev, ...updates };
-      // 如果更新了API配置，保存到本地存储
-      if (updates.apiConfig) {
-        saveApiConfig(newState.apiConfig);
-      }
+      // 保存到本地存储
+      saveGameState(newState);
       return newState;
     });
   };
@@ -88,8 +110,22 @@ export const useGameState = () => {
   const updateApiConfig = (config: Partial<ApiConfig>) => {
     const newConfig = { ...gameState.apiConfig, ...config };
     updateGameState({ apiConfig: newConfig });
-    saveApiConfig(newConfig);
   };
 
-  return { gameState, updateGameState, updateApiConfig };
+  // 清除游戏数据（保留API配置）
+  const clearGameData = () => {
+    const clearedState = {
+      caseId: '',
+      caseDescription: '',
+      victim: '',
+      suspects: [],
+      evidence: [],
+      solution: '',
+      apiConfig: gameState.apiConfig, // 保留API配置
+      currentInterrogation: undefined
+    };
+    updateGameState(clearedState);
+  };
+
+  return { gameState, updateGameState, updateApiConfig, clearGameData };
 };

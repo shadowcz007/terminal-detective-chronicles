@@ -14,6 +14,9 @@ const Terminal = () => {
   const { gameState, updateGameState, updateApiConfig } = useGameState();
 
   useEffect(() => {
+    // 检查是否有保存的案件
+    const hasExistingCase = gameState.caseId && gameState.caseDescription;
+    
     // 显示启动动画
     const initMessage = `
 ===============================================================================
@@ -24,15 +27,36 @@ const Terminal = () => {
                          ██║  ██║███████╗███████╗██████╔╝
                          ╚═╝  ╚═╝╚══════╝╚══════╝╚═════╝ 
 ===============================================================================
-AI DETECTIVE TERMINAL v2.1.5 | 当前案件ID: #${generateCaseId()}
+AI DETECTIVE TERMINAL v2.1.5 | 当前案件ID: #${hasExistingCase ? gameState.caseId : generateCaseId()}
 -------------------------------------------------------------------------------
 系统初始化完成... 
 ${gameState.apiConfig.key ? '✅ AI模式: 真实API (支持流式传输)' : '⚠️ AI模式: 模拟演示'}
+${hasExistingCase ? '🔄 检测到未完成案件，已自动恢复' : ''}
 输入 'help' 查看可用命令
 输入 'config' 配置API设置
 输入 'new_case' 开始新案件
+${hasExistingCase ? '输入 \'status\' 查看当前案件状态' : ''}
 `;
     addToHistory(initMessage);
+
+    // 如果有现有案件，显示案件信息
+    if (hasExistingCase) {
+      const caseInfo = `
+=== 当前案件信息 ===
+案件描述: ${gameState.caseDescription}
+受害者: ${gameState.victim}
+嫌疑人数量: ${gameState.suspects.length}
+证据数量: ${gameState.evidence.length}
+
+可用操作：
+  list_suspects - 查看嫌疑人
+  evidence - 查看证据
+  recreate - 重现现场
+  interrogate [ID] - 审问嫌疑人
+  clear_case - 清除当前案件
+`;
+      addToHistory(caseInfo);
+    }
   }, []);
 
   useEffect(() => {
@@ -101,7 +125,7 @@ ${gameState.apiConfig.key ? '✅ AI模式: 真实API (支持流式传输)' : '�
 
         // 显示操作提示
         if (command.toLowerCase().startsWith('new_case')) {
-          addToHistory('\n可用操作：\n  list_suspects - 查看嫌疑人\n  evidence - 查看证据\n  recreate - 重现现场\n  interrogate [ID] - 审问嫌疑人');
+          addToHistory('\n可用操作：\n  list_suspects - 查看嫌疑人\n  evidence - 查看证据\n  recreate - 重现现场\n  interrogate [ID] - 审问嫌疑人\n  status - 查看案件状态');
         }
       } else {
         // 非流式命令或未配置API密钥
