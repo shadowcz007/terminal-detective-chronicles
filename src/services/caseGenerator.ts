@@ -2,7 +2,7 @@
 import { GameState, ApiConfig } from '../hooks/useGameState';
 import { Language, t } from '../utils/i18n';
 import { createSingleLineStreamingEffect } from '../utils/gameFragments';
-import { llmRequest } from './llmClient';
+import { streamLLMRequest, llmRequest } from './llmClient';
 
 export const generateCase = async (
   config: ApiConfig, 
@@ -72,24 +72,26 @@ Please return in JSON format, ensuring logical consistency and rich clues.`;
       () => streamingComplete // 传入停止条件函数
     );
     
-    // 启动真实的API请求
-    const apiPromise = llmRequest(promptText, config).then(response => {
-      streamingComplete = true; // 标记API请求完成
-      return response;
+    // 启动真实的流式API请求
+    const apiPromise = streamLLMRequest(promptText, config, (token: string) => {
+      // 当流式响应开始时，停止混淆效果
+      if (!streamingComplete) {
+        streamingComplete = true;
+        onToken(`\n${t('caseFileGenerationComplete', language)}\n`);
+      }
+      // 显示真实的流式响应
+      onToken(token);
     });
     
     // 等待API请求完成
     const streamingResult = await apiPromise;
     
-    // API完成后，停止混淆效果并显示完成提示
-    onToken(`\n${t('caseFileGenerationComplete', language)}\n`);
-    
-    // 解析并显示最终结果
+    // 解析并返回结果
     const parsedResult = parseCaseResponse(streamingResult, language);
     
     // 将解析后的结果格式化显示给用户
     const resultDisplay = formatCaseResult(parsedResult, language);
-    onToken(resultDisplay);
+    onToken(`\n${resultDisplay}`);
     
     return parsedResult;
   } else {
