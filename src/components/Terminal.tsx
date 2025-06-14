@@ -4,6 +4,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import { executeCommand } from '../utils/commandHandler';
 import { t } from '../utils/i18n';
 import { Switch } from '@/components/ui/switch';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import TemporalPanels from './ChronosUI/TemporalPanels';
 import RealityBleed from './ChronosUI/RealityBleed';
 import CrystalWiring from './ChronosUI/CrystalWiring';
@@ -23,6 +24,7 @@ const Terminal = () => {
   const [glitchIntensity, setGlitchIntensity] = useState<'low' | 'medium' | 'high'>('low');
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { gameState, updateGameState, updateApiConfig } = useGameState();
   const { language, toggleLanguage } = useLanguage();
 
@@ -62,9 +64,13 @@ const Terminal = () => {
     }
   }, [language, gameState.caseId, gameState.caseDescription, gameState.victim, gameState.suspects?.length || 0, gameState.evidence?.length || 0, gameState.apiConfig.key]);
 
+  // Auto-scroll to bottom when history updates
   useEffect(() => {
-    if (terminalRef.current) {
-      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
     }
   }, [history, currentResponse]);
 
@@ -252,44 +258,48 @@ const Terminal = () => {
           </div>
         </TemporalPanels>
         
-        {/* Main Terminal Area */}
+        {/* Main Terminal Area with ScrollArea */}
         <TemporalPanels timeSpeed="present">
-          <div 
-            ref={terminalRef}
-            className="flex-1 overflow-y-auto mb-4 whitespace-pre-wrap text-sm leading-relaxed terminal-output"
-          >
-            {history.map((line, index) => (
-              <div key={index} className="mb-1 terminal-line">
-                {line}
-              </div>
-            ))}
-            
-            {/* Current streaming response */}
-            {currentResponse && (
-              <div className="mb-1 streaming-response">
-                {currentResponse}
-                {isStreaming && <span className="cursor-quantum">█</span>}
-              </div>
-            )}
+          <div className="flex-1 mb-4 min-h-0">
+            <ScrollArea 
+              ref={scrollAreaRef}
+              className="h-full terminal-output"
+            >
+              <div className="whitespace-pre-wrap text-sm leading-relaxed p-4">
+                {history.map((line, index) => (
+                  <div key={index} className="mb-1 terminal-line">
+                    {line}
+                  </div>
+                ))}
+                
+                {/* Current streaming response */}
+                {currentResponse && (
+                  <div className="mb-1 streaming-response">
+                    {currentResponse}
+                    {isStreaming && <span className="cursor-quantum">█</span>}
+                  </div>
+                )}
 
-            {/* Loading text */}
-            {loadingText && (
-              <div className="mb-1 loading-line">
-                {loadingText}
-                <span className="cursor-quantum text-yellow-400">█</span>
+                {/* Loading text */}
+                {loadingText && (
+                  <div className="mb-1 loading-line">
+                    {loadingText}
+                    <span className="cursor-quantum text-yellow-400">█</span>
+                  </div>
+                )}
+                
+                {isLoading && !isStreaming && !loadingText && (
+                  <div className="flex items-center loading-indicator">
+                    <span className="mr-2">{t('processing', language)}</span>
+                    <div className="flex space-x-1">
+                      <div className="quantum-dot"></div>
+                      <div className="quantum-dot" style={{animationDelay: '0.2s'}}></div>
+                      <div className="quantum-dot" style={{animationDelay: '0.4s'}}></div>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-            
-            {isLoading && !isStreaming && !loadingText && (
-              <div className="flex items-center loading-indicator">
-                <span className="mr-2">{t('processing', language)}</span>
-                <div className="flex space-x-1">
-                  <div className="quantum-dot"></div>
-                  <div className="quantum-dot" style={{animationDelay: '0.2s'}}></div>
-                  <div className="quantum-dot" style={{animationDelay: '0.4s'}}></div>
-                </div>
-              </div>
-            )}
+            </ScrollArea>
           </div>
         </TemporalPanels>
         
