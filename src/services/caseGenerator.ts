@@ -1,8 +1,8 @@
 import { GameState, ApiConfig } from '../hooks/useGameState';
 import { Language, t } from '../utils/i18n';
-import { createSingleLineStreamingEffect } from '../utils/gameFragments';
-import { streamLLMRequest, llmRequest } from './llmClient';
+import { llmRequest } from './llmClient';
 import { getCaseGenerationPrompt } from '../utils/prompts';
+import { executeStreamingRequest } from '../utils/streamingUtils';
 
 export const generateCase = async (
   config: ApiConfig, 
@@ -13,34 +13,13 @@ export const generateCase = async (
 
   // 如果有onToken回调，说明需要流式效果
   if (onToken) {
-    // 显示案件生成的混淆信息流
-    onToken(t('caseAnalysisSystemStart', language));
-    
-    let streamingComplete = false;
-    
-    // 同时启动混淆的单行流式效果和真实的流式API请求
-    const streamingPromise = createSingleLineStreamingEffect(
-      (text: string, isComplete: boolean) => {
-        if (!streamingComplete) {
-          // 只要API请求未完成，就继续显示混淆效果
-          onToken(`\r${text}`);
-        }
-      }, 
+    const streamingResult = await executeStreamingRequest({
+      promptText,
+      apiConfig: config,
       language,
-      () => streamingComplete // 传入停止条件函数
-    );
-    
-    const apiPromise = streamLLMRequest(promptText, config, (token: string) => {
-      // 流式请求过程中不显示真实的token，只积累响应内容
-      // 混淆效果会一直持续到streamingResult完成
-    });
-    
-    // 等待API请求完成，然后设置streamingComplete为true
-    const streamingResult = await apiPromise;
-    streamingComplete = true;
-    
-    // 停止混淆效果并显示完成信息
-    onToken(`\n${t('caseFileGenerationComplete', language)}\n`);
+      startMessage: t('caseAnalysisSystemStart', language),
+      completeMessage: t('caseFileGenerationComplete', language)
+    }, onToken);
     
     // 解析并返回结果
     const parsedResult = parseCaseResponse(streamingResult, language);
