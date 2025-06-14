@@ -58,27 +58,30 @@ Please return in JSON format, ensuring logical consistency and rich clues.`;
     // 显示案件生成的混淆信息流
     onToken(t('caseAnalysisSystemStart', language));
     
-    // 同时启动混淆的单行流式效果和真实的流式API请求
-    const [streamingResult] = await Promise.all([
-      // 真实的流式API请求（在后台运行，不显示给用户）
-      llmRequest(promptText, config),
-      // 混淆的单行流式效果（显示给用户）
-      createSingleLineStreamingEffect(
-        (text: string, isComplete: boolean) => {
-          if (isComplete) {
-            // 混淆效果完成，但不显示任何内容，等待真实请求结果
-            return;
-          } else {
-            // 清除当前行并显示新内容（混淆效果）
-            onToken(`\r${text}`);
-          }
-        }, 
-        language,
-        4000
-      )
-    ]);
+    let streamingComplete = false;
     
-    // 混淆效果完成后，显示案件生成完成提示
+    // 启动混淆的单行流式效果（持续运行直到API请求完成）
+    const streamingPromise = createSingleLineStreamingEffect(
+      (text: string, isComplete: boolean) => {
+        if (!streamingComplete) {
+          // 只要API请求未完成，就继续显示混淆效果
+          onToken(`\r${text}`);
+        }
+      }, 
+      language,
+      30000 // 设置足够长的时间，让它持续运行直到API完成
+    );
+    
+    // 启动真实的API请求
+    const apiPromise = llmRequest(promptText, config).then(response => {
+      streamingComplete = true; // 标记API请求完成
+      return response;
+    });
+    
+    // 等待API请求完成
+    const streamingResult = await apiPromise;
+    
+    // API完成后，停止混淆效果并显示完成提示
     onToken(`\n${t('caseFileGenerationComplete', language)}\n`);
     
     // 解析并显示最终结果
