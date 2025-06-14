@@ -18,7 +18,7 @@ export const generateCase = async (
     
     let streamingComplete = false;
     
-    // 启动混淆的单行流式效果（使用停止条件函数）
+    // 同时启动混淆的单行流式效果和真实的流式API请求
     const streamingPromise = createSingleLineStreamingEffect(
       (text: string, isComplete: boolean) => {
         if (!streamingComplete) {
@@ -30,7 +30,6 @@ export const generateCase = async (
       () => streamingComplete // 传入停止条件函数
     );
     
-    // 启动真实的流式API请求
     const apiPromise = streamLLMRequest(promptText, config, (token: string) => {
       // 当流式响应开始时，停止混淆效果
       if (!streamingComplete) {
@@ -41,8 +40,9 @@ export const generateCase = async (
       onToken(token);
     });
     
-    // 等待API请求完成
+    // 等待API请求完成，然后设置streamingComplete为true
     const streamingResult = await apiPromise;
+    streamingComplete = true;
     
     // 解析并返回结果
     const parsedResult = parseCaseResponse(streamingResult, language);
