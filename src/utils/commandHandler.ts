@@ -1,6 +1,6 @@
 
 import { GameState } from '../hooks/useGameState';
-import { Language, t } from '../utils/i18n';
+import { Language, t } from './i18n';
 import { generateCase, interrogateSuspect, generateCrimeScene } from './aiService';
 
 export const executeCommand = async (
