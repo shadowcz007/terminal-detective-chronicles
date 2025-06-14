@@ -17,11 +17,16 @@ const Terminal = () => {
   const { gameState, updateGameState, updateApiConfig } = useGameState();
   const { language, toggleLanguage } = useLanguage();
 
+  // 生成案件ID的函数
+  const generateCaseId = () => {
+    return `MH${new Date().getFullYear().toString().slice(-2)}${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+  };
+
   useEffect(() => {
     // 检查是否有保存的案件
     const hasExistingCase = gameState.caseId && gameState.caseDescription;
     
-    // 显示启动动画
+    // 显示启动动画 - 根据语言显示对应的提示信息
     const apiStatus = gameState.apiConfig.key ? t('aiModeReal', language) : t('aiModeDemo', language);
     const caseStatus = hasExistingCase ? t('caseRestored', language) : '';
     const statusCommand = hasExistingCase ? t('statusCommandText', language) : '';
@@ -33,7 +38,8 @@ const Terminal = () => {
       statusCommand
     });
     
-    addToHistory(initMessage);
+    // 清空历史记录并添加新的初始化信息
+    setHistory([initMessage]);
 
     // 如果有现有案件，显示案件信息
     if (hasExistingCase) {
@@ -43,19 +49,15 @@ const Terminal = () => {
         suspectCount: gameState.suspects.length.toString(),
         evidenceCount: gameState.evidence.length.toString()
       });
-      addToHistory(caseInfo);
+      setHistory(prev => [...prev, caseInfo]);
     }
-  }, [language]); // 添加 language 依赖，语言切换时重新初始化
+  }, [language, gameState.caseId, gameState.caseDescription, gameState.victim, gameState.suspects.length, gameState.evidence.length, gameState.apiConfig.key]);
 
   useEffect(() => {
     if (terminalRef.current) {
       terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
     }
   }, [history, currentResponse]);
-
-  const generateCaseId = () => {
-    return `MH${new Date().getFullYear().toString().slice(-2)}${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
-  };
 
   const addToHistory = (text: string) => {
     setHistory(prev => [...prev, text]);
