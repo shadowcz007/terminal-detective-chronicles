@@ -46,12 +46,12 @@ const Terminal = () => {
       const caseInfo = t('caseInfo', language, {
         description: gameState.caseDescription,
         victim: gameState.victim,
-        suspectCount: gameState.suspects.length.toString(),
-        evidenceCount: gameState.evidence.length.toString()
+        suspectCount: (gameState.suspects || []).length.toString(),
+        evidenceCount: (gameState.evidence || []).length.toString()
       });
       setHistory(prev => [...prev, caseInfo]);
     }
-  }, [language, gameState.caseId, gameState.caseDescription, gameState.victim, gameState.suspects.length, gameState.evidence.length, gameState.apiConfig.key]);
+  }, [language, gameState.caseId, gameState.caseDescription, gameState.victim, gameState.suspects?.length || 0, gameState.evidence?.length || 0, gameState.apiConfig.key]);
 
   useEffect(() => {
     if (terminalRef.current) {
