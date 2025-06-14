@@ -53,12 +53,15 @@ export const executeStreamingRequest = async (
     onToken(`\n${completeMessage}\n`);
     
     // 现在开始流式显示真实的结果内容
-    const chars = streamingResult.split('');
-    for (let i = 0; i < chars.length; i++) {
-      onToken(chars[i]);
-      // 添加延迟以实现打字机效果
-      await new Promise(resolve => setTimeout(resolve, 30));
-    }
+    // const chars = streamingResult.split('');
+    // for (let i = 0; i < chars.length; i++) {
+    //   onToken(chars[i]);
+    //   // 添加延迟以实现打字机效果
+    //   await new Promise(resolve => setTimeout(resolve, 30));
+    // }
+    
+    // 直接显示完整结果（临时）
+    onToken(streamingResult);
     
     // 如果有提示信息，显示提示
     if (tipMessage) {
