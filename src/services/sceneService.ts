@@ -33,23 +33,25 @@ export const generateCrimeScene = async (
     
     // 启动真实的流式API请求
     const apiPromise = streamLLMRequest(promptText, gameState.apiConfig, (token: string) => {
-      // 当流式响应开始时，停止混淆效果
-      if (!streamingComplete) {
-        streamingComplete = true;
-        onToken(`\n${t('sceneRecreationStarted', language)}\n`);
-      }
-      // 显示真实的流式响应
-      onToken(token);
+      // 流式请求过程中不显示真实的token，只积累响应内容
+      // 混淆效果会一直持续到streamingResult完成
     });
     
-    // 等待API请求完成
-    const response = await apiPromise;
+    // 等待API请求完成，然后设置streamingComplete为true
+    const streamingResult = await apiPromise;
+    streamingComplete = true;
+    
+    // 停止混淆效果并显示完成信息
+    onToken(`\n${t('sceneRecreationStarted', language)}\n`);
+    
+    // 显示真实的现场重现结果
+    onToken(streamingResult);
     
     // 在现场重现结束后添加提示
     const hintMsg = t('sceneAnalysisTip', language);
     onToken(`\n\n${hintMsg}\n`);
     
-    return response;
+    return streamingResult;
   } else {
     // 非流式模式，使用实际的API请求
     return await realLLMRequest(promptText, gameState.apiConfig);
