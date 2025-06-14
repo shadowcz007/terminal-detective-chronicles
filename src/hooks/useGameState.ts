@@ -1,43 +1,29 @@
 
 import { useState, useEffect } from 'react';
-
-export interface Suspect {
-  id: string;
-  name: string;
-  occupation: string;
-  relationship: string;
-  motive: string;
-  alibi: string;
-}
-
-export interface Evidence {
-  id: string;
-  name: string;
-  description: string;
-  location: string;
-}
-
-export interface ApiConfig {
-  url: string;
-  key: string;
-  model: string;
-}
-
-export interface GameState {
-  caseId: string;
-  caseDescription: string;
-  victim: string;
-  suspects: Suspect[];
-  evidence: Evidence[];
-  solution: string;
-  apiConfig: ApiConfig;
-  currentInterrogation?: string;
-}
+import { GameState, ApiConfig, GameProgress, DIFFICULTY_LEVELS } from '../types/gameTypes';
 
 const DEFAULT_CONFIG: ApiConfig = {
   url: 'https://api.openai.com/v1/chat/completions',
   key: '',
   model: 'gpt-3.5-turbo'
+};
+
+const DEFAULT_PROGRESS: GameProgress = {
+  completedCases: [],
+  achievements: [],
+  stats: {
+    totalCasesPlayed: 0,
+    totalCasesSolved: 0,
+    averageCompletionTime: 0,
+    bestCompletionTime: 0,
+    totalStars: 0,
+    achievementsUnlocked: 0,
+    difficultyStats: {
+      easy: { played: 0, solved: 0, bestTime: 0 },
+      normal: { played: 0, solved: 0, bestTime: 0 },
+      hard: { played: 0, solved: 0, bestTime: 0 }
+    }
+  }
 };
 
 // 从本地存储加载完整游戏状态
@@ -48,6 +34,15 @@ const loadGameState = (): GameState => {
     
     if (savedState) {
       const gameState = JSON.parse(savedState);
+      
+      // 确保新字段存在
+      if (!gameState.difficulty) {
+        gameState.difficulty = DIFFICULTY_LEVELS.normal;
+      }
+      if (!gameState.gameProgress) {
+        gameState.gameProgress = DEFAULT_PROGRESS;
+      }
+      
       // 如果有单独保存的配置，优先使用
       if (savedConfig) {
         gameState.apiConfig = { ...DEFAULT_CONFIG, ...JSON.parse(savedConfig) };
@@ -66,7 +61,9 @@ const loadGameState = (): GameState => {
       evidence: [],
       solution: '',
       apiConfig,
-      currentInterrogation: undefined
+      currentInterrogation: undefined,
+      difficulty: DIFFICULTY_LEVELS.normal,
+      gameProgress: DEFAULT_PROGRESS
     };
   } catch (error) {
     console.error('Failed to load game state from localStorage:', error);
@@ -78,7 +75,9 @@ const loadGameState = (): GameState => {
       evidence: [],
       solution: '',
       apiConfig: DEFAULT_CONFIG,
-      currentInterrogation: undefined
+      currentInterrogation: undefined,
+      difficulty: DIFFICULTY_LEVELS.normal,
+      gameProgress: DEFAULT_PROGRESS
     };
   }
 };
@@ -112,7 +111,7 @@ export const useGameState = () => {
     updateGameState({ apiConfig: newConfig });
   };
 
-  // 清除游戏数据（保留API配置）
+  // 清除游戏数据（保留API配置和进度）
   const clearGameData = () => {
     const clearedState = {
       caseId: '',
@@ -122,10 +121,15 @@ export const useGameState = () => {
       evidence: [],
       solution: '',
       apiConfig: gameState.apiConfig, // 保留API配置
-      currentInterrogation: undefined
+      currentInterrogation: undefined,
+      difficulty: gameState.difficulty, // 保留难度设置
+      gameProgress: gameState.gameProgress // 保留游戏进度
     };
     updateGameState(clearedState);
   };
 
   return { gameState, updateGameState, updateApiConfig, clearGameData };
 };
+
+// 重新导出类型，保持向后兼容
+export type { GameState, Suspect, Evidence, ApiConfig } from '../types/gameTypes';

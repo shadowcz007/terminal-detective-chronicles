@@ -1,6 +1,15 @@
-import { GameState } from '../hooks/useGameState';
+
+import { GameState } from '../types/gameTypes';
 import { Language, t } from './i18n';
 import { generateCase, interrogateSuspect, generateCrimeScene } from './aiService';
+import { handleDifficultyCommands } from '../commands/difficultyCommands';
+import { handleProgressCommands } from '../commands/progressCommands';
+import { ProgressManager } from '../features/progress/progressManager';
+
+// 游戏状态跟踪（用于记录开始时间等）
+let gameStartTime: number | null = null;
+let interrogationCount = 0;
+let wrongGuessCount = 0;
 
 export const executeCommand = async (
   command: string, 
@@ -14,13 +23,55 @@ export const executeCommand = async (
   const cmd = parts[0].toLowerCase();
   const args = parts.slice(1);
 
+  // 处理难度相关命令
+  const difficultyResult = handleDifficultyCommands(cmd, args, gameState, updateGameState, language);
+  if (difficultyResult) return difficultyResult;
+
+  // 处理进度相关命令
+  const progressResult = handleProgressCommands(cmd, args, gameState, updateGameState, language);
+  if (progressResult) return progressResult;
+
   switch (cmd) {
     case 'help':
-      return t('help', language);
-
-    case 'lang':
-      // 语言切换命令 - 这个实际上由Terminal组件处理，这里只是返回确认信息
-      return t('languageSwitched', language);
+      return language === 'zh' ? `
+可用命令：
+  new_case       - 生成新案件
+  list_suspects  - 显示嫌疑人名单
+  interrogate [ID] - 审问嫌疑人 (例: interrogate 1)
+  evidence       - 查看证据档案
+  recreate       - 生成犯罪现场重现
+  submit [嫌疑人ID] - 提交最终结论
+  status         - 查看当前案件状态
+  clear_case     - 清除当前案件数据
+  difficulty     - 查看/设置游戏难度
+  records        - 查看通关记录
+  achievements   - 查看成就系统
+  stats          - 查看游戏统计
+  reset_progress - 重置游戏进度
+  config         - 查看/修改API设置
+  lang           - 切换语言 (中/英文)
+  clear          - 清空终端  
+  exit           - 退出系统
+` : `
+Available Commands:
+  new_case       - Generate new case
+  list_suspects  - Display suspect list
+  interrogate [ID] - Interrogate suspect (e.g: interrogate 1)
+  evidence       - View evidence files
+  recreate       - Generate crime scene recreation
+  submit [Suspect ID] - Submit final conclusion
+  status         - Check current case status
+  clear_case     - Clear current case data
+  difficulty     - View/set game difficulty
+  records        - View completion records
+  achievements   - View achievement system
+  stats          - View game statistics
+  reset_progress - Reset game progress
+  config         - View/modify API settings
+  lang           - Switch language (Chinese/English)
+  clear          - Clear terminal
+  exit           - Exit system
+`;
 
     case 'status':
       if (!gameState.caseId) {
@@ -60,7 +111,12 @@ export const executeCommand = async (
 
     case 'new_case':
       try {
-        const caseData = await generateCase(gameState.apiConfig, onStreamToken, language);
+        // 重置游戏计时和计数器
+        gameStartTime = Date.now();
+        interrogationCount = 0;
+        wrongGuessCount = 0;
+        
+        const caseData = await generateCase(gameState.apiConfig, onStreamToken, language, gameState.difficulty.level);
         updateGameState(caseData);
         
         // 生成详细的案件信息显示 - 使用翻译
@@ -125,6 +181,7 @@ ${t('suspectsOverview', language)}`;
       try {
         const suspect = gameState.suspects[suspectIndex];
         updateGameState({ currentInterrogation: suspect.id });
+        interrogationCount++; // 增加审问计数
         
         if (onStreamToken) {
           // 流式模式：获取审问结果并显示
@@ -178,27 +235,101 @@ ${t('analyzeSceneDetails', language)}
       }
       
       const accusedSuspect = gameState.suspects[submitIndex];
-      const isCorrect = accusedSuspect.id === gameState.solution;
+      const isCorrect = gameState.solution.includes(accusedSuspect.name) || gameState.solution.includes(accusedSuspect.id);
+      
+      // 计算完成时间
+      const completionTime = gameStartTime ? Math.floor((Date.now() - gameStartTime) / 1000) : 0;
+      
+      if (!isCorrect) {
+        wrongGuessCount++; // 增加错误计数
+      }
+      
+      // 记录游戏结果
+      const { record, newAchievements } = ProgressManager.recordCaseCompletion(
+        gameState,
+        completionTime,
+        interrogationCount,
+        wrongGuessCount,
+        isCorrect
+      );
+      
+      // 更新游戏进度
+      const updatedProgress = {
+        ...gameState.gameProgress,
+        completedCases: [...gameState.gameProgress.completedCases, record],
+        achievements: [...gameState.gameProgress.achievements, ...newAchievements]
+      };
+      
+      updateGameState({ gameProgress: updatedProgress });
+      
+      // 重置计时器和计数器
+      gameStartTime = null;
+      interrogationCount = 0;
+      wrongGuessCount = 0;
+      
+      let resultMessage = '';
       
       if (isCorrect) {
-        return `
-${t('congratulations', language)}
+        const stars = '★'.repeat(record.stars) + '☆'.repeat(3 - record.stars);
+        const formatTime = (seconds: number) => {
+          const mins = Math.floor(seconds / 60);
+          const secs = seconds % 60;
+          return `${mins}:${secs.toString().padStart(2, '0')}`;
+        };
+        
+        resultMessage = language === 'zh' ? `
+🎉 恭喜破案成功！
 
-${t('suspectIsKiller', language, { name: accusedSuspect.name })}
-${t('truthRevealed', language, { motive: accusedSuspect.motive })}
+✅ ${accusedSuspect.name} 确实是真凶！
+💡 真相：${accusedSuspect.motive}
 
-${t('caseClosed', language)}
+📊 本局统计：
+   完成时间: ${formatTime(completionTime)}
+   审问次数: ${interrogationCount}
+   错误次数: ${wrongGuessCount}
+   获得星级: ${stars}
+
+🏆 案件已记录到通关记录中
+` : `
+🎉 Congratulations! Case Solved!
+
+✅ ${accusedSuspect.name} is indeed the killer!
+💡 Truth: ${accusedSuspect.motive}
+
+📊 Game Statistics:
+   Completion Time: ${formatTime(completionTime)}
+   Interrogations: ${interrogationCount}
+   Wrong Guesses: ${wrongGuessCount}
+   Stars Earned: ${stars}
+
+🏆 Case recorded in completion records
 `;
       } else {
-        return `
-${t('incorrectDeduction', language)}
+        resultMessage = language === 'zh' ? `
+❌ 推理错误！
 
-${t('suspectNotKiller', language, { name: accusedSuspect.name })}
-${t('reexamineEvidence', language)}
+${accusedSuspect.name} 不是真凶
+请重新审视证据和线索
 
-${t('continueInvestigation', language)}
+💡 提示：继续调查，真相就在眼前
+` : `
+❌ Incorrect Deduction!
+
+${accusedSuspect.name} is not the killer
+Please reexamine the evidence and clues
+
+💡 Hint: Continue investigating, the truth is within reach
 `;
       }
+      
+      // 显示新解锁的成就
+      if (newAchievements.length > 0) {
+        newAchievements.forEach(achievement => {
+          resultMessage += `\n🎉 ${t('achievementUnlocked', language, { name: achievement.name })}`;
+        });
+      }
+      
+      return resultMessage;
 
     case 'config':
       if (args.length === 0) {

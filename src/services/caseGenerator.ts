@@ -1,15 +1,20 @@
-import { GameState, ApiConfig } from '../hooks/useGameState';
+
+import { GameState, ApiConfig } from '../types/gameTypes';
 import { Language, t } from '../utils/i18n';
 import { llmRequest } from './llmClient';
 import { getCaseGenerationPrompt } from '../utils/prompts';
 import { executeStreamingRequest } from '../utils/streamingUtils';
+import { getDifficultyPromptAddition } from '../features/difficulty/difficultyConfig';
 
 export const generateCase = async (
   config: ApiConfig, 
   onToken?: (token: string) => void,
-  language: Language = 'zh'
+  language: Language = 'zh',
+  difficulty: string = 'normal'
 ): Promise<Partial<GameState>> => {
-  const promptText = getCaseGenerationPrompt(language);
+  const basePrompt = getCaseGenerationPrompt(language);
+  const difficultyAddition = getDifficultyPromptAddition(difficulty, language);
+  const promptText = basePrompt + difficultyAddition;
 
   // 如果有onToken回调，说明需要流式效果
   if (onToken) {
