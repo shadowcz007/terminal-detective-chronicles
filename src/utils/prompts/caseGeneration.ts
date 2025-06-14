@@ -6,137 +6,94 @@ export const getCaseGenerationPrompt = (language: Language): string => {
     `你是一个专业的推理小说作家。请生成一个复杂的谋杀案件，严格按照以下JSON格式返回：
 
 {
-  "description": "一位著名的艺术品收藏家在自己的豪宅书房中被发现死亡，现场留下了神秘的线索",
-  "victim": "约翰·威廉姆斯，65岁，著名艺术品收藏家和画廊老板",
+  "description": "案件概述描述",
+  "victim": "受害者信息",
   "suspects": [
     {
       "id": "1",
-      "name": "艾米莉·威廉姆斯",
-      "occupation": "艺术史学者",
-      "relationship": "死者的女儿",
-      "motive": "继承遗产，与父亲在艺术品处理上有分歧",
-      "alibi": "声称案发时在图书馆研究，但无人证实"
-    },
-    {
-      "id": "2",
-      "name": "马克·汤普森",
-      "occupation": "艺术品鉴定师",
-      "relationship": "死者的商业伙伴",
-      "motive": "商业纠纷，怀疑死者出售赝品损害声誉",
-      "alibi": "声称在家中整理文件，妻子可以作证"
-    },
-    {
-      "id": "3",
-      "name": "莎拉·陈",
-      "occupation": "私人助理",
-      "relationship": "死者的贴身助理",
-      "motive": "发现死者的非法交易，担心被牵连",
-      "alibi": "声称早退回家照顾生病的母亲"
+      "name": "嫌疑人姓名",
+      "occupation": "职业",
+      "relationship": "与死者关系",
+      "motive": "作案动机",
+      "alibi": "不在场证明"
     }
   ],
   "evidence": [
     {
       "id": "1",
-      "name": "破碎的古董花瓶",
-      "description": "一个价值连城的明代花瓶碎片散落在书房地板上，似乎是搏斗中被打破",
-      "location": "书房地板"
-    },
-    {
-      "id": "2",
-      "name": "神秘的便条",
-      "description": "一张写着'你知道真相'的便条，字迹潦草，疑似匆忙写下",
-      "location": "死者桌案上"
-    },
-    {
-      "id": "3",
-      "name": "沾血的艺术品目录",
-      "description": "一本翻开的艺术品拍卖目录，某页上有血迹，标记着一件失窃的名画",
-      "location": "死者手边"
-    },
-    {
-      "id": "4",
-      "name": "监控录像",
-      "description": "显示案发前两小时内有三人先后进入豪宅，但画面在关键时刻出现异常",
-      "location": "豪宅安保系统"
+      "name": "证物名称",
+      "description": "详细描述",
+      "location": "发现地点"
     }
   ],
-  "solution": "真相：马克·汤普森是真正的凶手。他发现约翰在出售赝品并将责任推给他，导致自己的职业声誉受损。当晚他前来对质，争执中失手杀死了约翰，然后伪造现场企图嫁祸给艾米莉。他利用自己对豪宅的熟悉程度篡改了监控录像的时间戳。"
+  "solution": "真相揭示，必须指定真正的凶手"
 }
 
-要求：
+【重要创作要求】：
 1. 必须严格按照上述JSON格式输出，不要添加任何额外的文字说明
-2. 生成3个嫌疑人，每个都有完整的信息
-3. 生成3-4个关键证据
-4. 确保逻辑合理，线索丰富
-5. solution中必须指定真正的凶手（从嫌疑人中选择）
-6. 参考示例的详细程度和复杂性
-7. 创造富有挑战性的推理情节` :
+2. 必须生成完全原创的内容，避免使用常见的推理小说套路
+3. 案件背景必须具有独特性：选择不同寻常的场所、职业或情境
+4. 生成3个嫌疑人，每个都有完整且独特的背景信息
+5. 生成3-4个关键证据，每个证据都应该有独特的特征
+6. 确保逻辑合理，线索丰富但不重复常见模式
+7. solution中必须明确指定真正的凶手（从嫌疑人中选择）
+8. 避免使用以下常见元素：艺术品收藏家、商业伙伴纠纷、遗产争夺
+9. 创新性要求：尝试不同的职业背景、不寻常的作案手法、独特的现场环境
+10. 人物姓名必须多样化，避免使用约翰、艾米莉、马克等常见英文名
+11. 证据类型要有创新性，避免使用破碎花瓶、神秘便条等常见证物
+
+【创意方向建议】：
+- 可以考虑科技行业、医疗领域、教育机构、娱乐圈等不同背景
+- 探索现代社交媒体、数字化证据、新兴技术等元素
+- 尝试不同的人际关系网络和动机类型
+- 创造独特的现场环境和作案手法
+
+请基于以上要求，创造一个全新的、引人入胜的推理案件。` :
     `You are a professional mystery novel writer. Please generate a complex murder case strictly following this JSON format:
 
 {
-  "description": "A famous art collector was found dead in the study of his mansion, with mysterious clues left at the scene",
-  "victim": "John Williams, 65, renowned art collector and gallery owner",
+  "description": "Case overview description",
+  "victim": "Victim information",
   "suspects": [
     {
       "id": "1",
-      "name": "Emily Williams",
-      "occupation": "Art historian",
-      "relationship": "Victim's daughter",
-      "motive": "Inheritance dispute and disagreement over art handling",
-      "alibi": "Claims to have been researching at the library, but no witnesses"
-    },
-    {
-      "id": "2",
-      "name": "Mark Thompson",
-      "occupation": "Art appraiser",
-      "relationship": "Victim's business partner",
-      "motive": "Business dispute, suspected victim of selling forgeries damaging reputation",
-      "alibi": "Claims to have been organizing documents at home, wife can testify"
-    },
-    {
-      "id": "3",
-      "name": "Sarah Chen",
-      "occupation": "Personal assistant",
-      "relationship": "Victim's personal assistant",
-      "motive": "Discovered victim's illegal transactions, worried about being implicated",
-      "alibi": "Claims to have left early to care for sick mother"
+      "name": "Suspect name",
+      "occupation": "Occupation",
+      "relationship": "Relationship to victim",
+      "motive": "Motive",
+      "alibi": "Alibi"
     }
   ],
   "evidence": [
     {
       "id": "1",
-      "name": "Broken antique vase",
-      "description": "Fragments of a priceless Ming Dynasty vase scattered on the study floor, seemingly broken during a struggle",
-      "location": "Study floor"
-    },
-    {
-      "id": "2",
-      "name": "Mysterious note",
-      "description": "A hastily written note saying 'You know the truth', with messy handwriting",
-      "location": "On victim's desk"
-    },
-    {
-      "id": "3",
-      "name": "Bloodstained art catalog",
-      "description": "An open art auction catalog with blood stains on a page marking a stolen famous painting",
-      "location": "Next to victim"
-    },
-    {
-      "id": "4",
-      "name": "Security footage",
-      "description": "Shows three people entering the mansion within two hours before the incident, but footage shows anomalies at crucial moments",
-      "location": "Mansion security system"
+      "name": "Evidence name",
+      "description": "Detailed description",
+      "location": "Location found"
     }
   ],
-  "solution": "Truth: Mark Thompson is the real killer. He discovered John was selling forgeries and pushing the blame onto him, damaging his professional reputation. He came to confront John that night, accidentally killed him during the argument, then staged the scene to frame Emily. He used his familiarity with the mansion to tamper with the surveillance footage timestamps."
+  "solution": "Truth revelation, must specify the real culprit"
 }
 
-Requirements:
-1.  Must strictly follow the above JSON format, do not add any additional text
-2. Generate 3 suspects, each with complete information
-3. Generate 3-4 key pieces of evidence
-4. Ensure logical consistency and rich clues
-5. Solution must specify the real culprit (chosen from suspects)
-6. Follow the example's level of detail and complexity
-7. Create challenging detective scenarios`;
+【IMPORTANT CREATIVE REQUIREMENTS】:
+1. Must strictly follow the above JSON format, do not add any additional text
+2. Must generate completely original content, avoid common mystery novel tropes
+3. Case background must be unique: choose unusual locations, professions, or situations
+4. Generate 3 suspects, each with complete and unique background information
+5. Generate 3-4 key pieces of evidence, each with distinctive characteristics
+6. Ensure logical consistency and rich clues without repeating common patterns
+7. Solution must clearly specify the real culprit (chosen from suspects)
+8. Avoid using these common elements: art collectors, business partner disputes, inheritance fights
+9. Innovation requirements: try different professional backgrounds, unusual methods, unique crime scenes
+10. Character names must be diverse, avoid common names like John, Emily, Mark
+11. Evidence types should be innovative, avoid broken vases, mysterious notes, etc.
+
+【CREATIVE DIRECTION SUGGESTIONS】:
+- Consider tech industry, medical field, educational institutions, entertainment industry backgrounds
+- Explore modern social media, digital evidence, emerging technology elements
+- Try different interpersonal networks and motive types
+- Create unique crime scenes and methods
+
+Please create a completely new and compelling mystery case based on these requirements.`;
 };
+```
