@@ -96,4 +96,3 @@ export const getCaseGenerationPrompt = (language: Language): string => {
 
 Please create a completely new and compelling mystery case based on these requirements.`;
 };
-```
