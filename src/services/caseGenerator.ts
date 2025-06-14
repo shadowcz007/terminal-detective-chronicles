@@ -58,32 +58,37 @@ Please return in JSON format, ensuring logical consistency and rich clues.`;
     // 显示案件生成的混淆信息流
     onToken(t('caseAnalysisSystemStart', language));
     
-    // 启动混淆的单行流式效果
-    const streamingPromise = createSingleLineStreamingEffect(
-      (text: string, isComplete: boolean) => {
-        if (isComplete) {
-          onToken(t('caseFileGenerationComplete', language));
-        } else {
-          // 清除当前行并显示新内容
-          onToken(`\r${text}`);
-        }
-      }, 
-      language,
-      4000
-    );
+    // 同时启动混淆的单行流式效果和真实的流式API请求
+    const [streamingResult] = await Promise.all([
+      // 真实的流式API请求（在后台运行，不显示给用户）
+      llmRequest(promptText, config),
+      // 混淆的单行流式效果（显示给用户）
+      createSingleLineStreamingEffect(
+        (text: string, isComplete: boolean) => {
+          if (isComplete) {
+            // 混淆效果完成，但不显示任何内容，等待真实请求结果
+            return;
+          } else {
+            // 清除当前行并显示新内容（混淆效果）
+            onToken(`\r${text}`);
+          }
+        }, 
+        language,
+        4000
+      )
+    ]);
     
-    // 等待流式效果完成
-    await streamingPromise;
+    // 混淆效果完成后，显示案件生成完成提示
+    onToken(`\n${t('caseFileGenerationComplete', language)}\n`);
     
-    // 流式效果完成后，开始真实的流式API请求
-    onToken(`\n${t('generatingCaseDetails', language)}\n`);
+    // 解析并显示最终结果
+    const parsedResult = parseCaseResponse(streamingResult, language);
     
-    // 使用流式API获取真实数据
-    const response = await llmRequest(promptText, config, (token: string) => {
-      onToken(token);
-    });
+    // 将解析后的结果格式化显示给用户
+    const resultDisplay = formatCaseResult(parsedResult, language);
+    onToken(resultDisplay);
     
-    return parseCaseResponse(response, language);
+    return parsedResult;
   } else {
     // 非流式模式，直接返回结果
     const response = await llmRequest(promptText, config);
@@ -116,4 +121,28 @@ const parseCaseResponse = (response: string, language: Language): Partial<GameSt
       error: error instanceof Error ? error.message : t('unknownError', language)
     }));
   }
+};
+
+// 格式化案件结果用于显示
+const formatCaseResult = (caseData: Partial<GameState>, language: Language): string => {
+  let caseInfo = `
+${t('newCaseFile', language)}
+${t('caseId', language)}: #${caseData.caseId}
+${t('overview', language)}: ${caseData.caseDescription}
+${t('victim', language)}: ${caseData.victim}
+
+${t('suspectsOverview', language)}`;
+  
+  caseData.suspects?.forEach((suspect, index) => {
+    caseInfo += `\n[${index + 1}] ${suspect.name} - ${suspect.occupation}`;
+    caseInfo += `\n    ${t('relationship', language)}: ${suspect.relationship}`;
+  });
+  
+  caseInfo += `\n\n${t('initialEvidence', language)}`;
+  caseData.evidence?.forEach((evidence, index) => {
+    caseInfo += `\n[${index + 1}] ${evidence.name}`;
+    caseInfo += `\n    ${t('location', language)}: ${evidence.location}`;
+  });
+  
+  return caseInfo;
 };
