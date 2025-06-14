@@ -1,4 +1,5 @@
 import { GameState, Suspect, Evidence, ApiConfig } from '../hooks/useGameState';
+import { createStreamingEffect } from './gameFragments';
 
 // 流式响应处理函数
 export const streamLLMRequest = async (
@@ -309,29 +310,73 @@ export const generateCase = async (
   "solution": "suspect_1"
 }`;
   
-  const response = await llmRequest(prompt, apiConfig, onToken);
-  
-  try {
-    // 提取JSON内容，处理可能包含代码块的响应
-    let jsonContent = response;
-    if (response.includes('```json')) {
-      const match = response.match(/```json\n([\s\S]*?)\n```/);
-      if (match) {
-        jsonContent = match[1];
-      }
-    }
+  // 如果有onToken回调，说明需要流式效果
+  if (onToken) {
+    // 显示案件生成的混淆信息流
+    onToken('\n=== 案件分析系统启动 ===\n');
+    onToken('正在分析犯罪现场数据...\n\n');
     
-    const caseData = JSON.parse(jsonContent);
-    return {
-      caseId: `MH${new Date().getFullYear().toString().slice(-2)}${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
-      caseDescription: caseData.description,
-      victim: caseData.victim,
-      suspects: caseData.suspects,
-      evidence: caseData.evidence,
-      solution: caseData.solution
-    };
-  } catch (error) {
-    throw new Error('案件生成失败：AI响应格式错误');
+    // 启动混淆的流式效果
+    const streamingPromise = createStreamingEffect(onToken, 4000);
+    
+    // 同时在后台获取真实数据（不显示给用户）
+    const responsePromise = llmRequest(prompt, apiConfig);
+    
+    // 等待流式效果完成
+    await streamingPromise;
+    
+    onToken('\n分析完成，正在生成案件档案...\n');
+    
+    // 获取真实响应
+    const response = await responsePromise;
+    
+    try {
+      // 提取JSON内容，处理可能包含代码块的响应
+      let jsonContent = response;
+      if (response.includes('```json')) {
+        const match = response.match(/```json\n([\s\S]*?)\n```/);
+        if (match) {
+          jsonContent = match[1];
+        }
+      }
+      
+      const caseData = JSON.parse(jsonContent);
+      return {
+        caseId: `MH${new Date().getFullYear().toString().slice(-2)}${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+        caseDescription: caseData.description,
+        victim: caseData.victim,
+        suspects: caseData.suspects,
+        evidence: caseData.evidence,
+        solution: caseData.solution
+      };
+    } catch (error) {
+      throw new Error('案件生成失败：AI响应格式错误');
+    }
+  } else {
+    // 非流式模式，直接返回结果
+    const response = await llmRequest(prompt, apiConfig);
+    
+    try {
+      let jsonContent = response;
+      if (response.includes('```json')) {
+        const match = response.match(/```json\n([\s\S]*?)\n```/);
+        if (match) {
+          jsonContent = match[1];
+        }
+      }
+      
+      const caseData = JSON.parse(jsonContent);
+      return {
+        caseId: `MH${new Date().getFullYear().toString().slice(-2)}${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+        caseDescription: caseData.description,
+        victim: caseData.victim,
+        suspects: caseData.suspects,
+        evidence: caseData.evidence,
+        solution: caseData.solution
+      };
+    } catch (error) {
+      throw new Error('案件生成失败：AI响应格式错误');
+    }
   }
 };
 
