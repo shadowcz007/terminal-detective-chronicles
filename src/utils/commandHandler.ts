@@ -8,7 +8,9 @@ export const executeCommand = async (
   updateGameState: (updates: Partial<GameState>) => void,
   updateApiConfig: (config: Partial<GameState['apiConfig']>) => void
 ): Promise<string> => {
-  const [cmd, ...args] = command.toLowerCase().split(' ');
+  const parts = command.split(' ');
+  const cmd = parts[0].toLowerCase();
+  const args = parts.slice(1);
 
   switch (cmd) {
     case 'help':
@@ -166,8 +168,9 @@ ${accusedSuspect.name} 不是真凶。
 提示: ${apiConfig.key ? '✅ 已配置API密钥，将使用真实AI' : '⚠️ 未配置API密钥，当前使用模拟AI'}
 `;
       } else {
-        // 设置配置
-        const [configType, ...configValue] = args;
+        // 设置配置 - 严格按照用户输入，不处理大小写
+        const configType = args[0];
+        const configValue = args.slice(1);
         const value = configValue.join(' ');
         
         switch (configType) {
@@ -201,3 +204,5 @@ ${accusedSuspect.name} 不是真凶。
       return `未知命令: ${cmd}. 输入 'help' 查看帮助`;
   }
 };
+```
+
