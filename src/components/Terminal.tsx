@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useGameState } from '../hooks/useGameState';
 import { useLanguage } from '../hooks/useLanguage';
@@ -8,6 +9,8 @@ import { Switch } from '@/components/ui/switch';
 const Terminal = () => {
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<string[]>([]);
+  const [commandHistory, setCommandHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
   const [isLoading, setIsLoading] = useState(false);
   const [currentResponse, setCurrentResponse] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
@@ -79,7 +82,14 @@ const Terminal = () => {
 
     const command = input.trim();
     addToHistory(`> ${command}`);
+    
+    // 添加到命令历史记录
+    if (command && !commandHistory.includes(command)) {
+      setCommandHistory(prev => [...prev, command]);
+    }
+    
     setInput('');
+    setHistoryIndex(-1); // 重置历史索引
     setIsLoading(true);
     setCurrentResponse('');
     setLoadingText('');
@@ -141,8 +151,25 @@ const Terminal = () => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    if (e.key === 'ArrowUp') {
       e.preventDefault();
+      if (commandHistory.length > 0) {
+        const newIndex = historyIndex === -1 ? commandHistory.length - 1 : Math.max(0, historyIndex - 1);
+        setHistoryIndex(newIndex);
+        setInput(commandHistory[newIndex]);
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (historyIndex !== -1) {
+        const newIndex = historyIndex + 1;
+        if (newIndex >= commandHistory.length) {
+          setHistoryIndex(-1);
+          setInput('');
+        } else {
+          setHistoryIndex(newIndex);
+          setInput(commandHistory[newIndex]);
+        }
+      }
     }
   };
 
