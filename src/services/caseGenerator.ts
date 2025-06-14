@@ -60,7 +60,7 @@ Please return in JSON format, ensuring logical consistency and rich clues.`;
     
     let streamingComplete = false;
     
-    // 启动混淆的单行流式效果（持续运行直到API请求完成）
+    // 启动混淆的单行流式效果（使用停止条件函数）
     const streamingPromise = createSingleLineStreamingEffect(
       (text: string, isComplete: boolean) => {
         if (!streamingComplete) {
@@ -69,7 +69,7 @@ Please return in JSON format, ensuring logical consistency and rich clues.`;
         }
       }, 
       language,
-      30000 // 设置足够长的时间，让它持续运行直到API完成
+      () => streamingComplete // 传入停止条件函数
     );
     
     // 启动真实的API请求

@@ -45,19 +45,19 @@ export const generateRandomFragment = (language: Language): string => {
   return t(fragmentKey, language);
 };
 
-// 创建单行流式效果，带有loading动画
+// 创建单行流式效果，带有loading动画，支持外部停止条件
 export const createSingleLineStreamingEffect = (
   onUpdate: (text: string, isComplete: boolean) => void,
   language: Language,
-  duration: number = 4000
+  shouldStop: () => boolean, // 新增：外部停止条件函数
+  interval: number = 800 // 可选：更新间隔时间
 ): Promise<void> => {
   return new Promise((resolve) => {
-    const interval = 800; // 每800ms更换一个片段
-    const totalSteps = Math.floor(duration / interval);
     let currentStep = 0;
 
     const timer = setInterval(() => {
-      if (currentStep >= totalSteps) {
+      // 检查外部停止条件
+      if (shouldStop()) {
         clearInterval(timer);
         onUpdate('', true); // 清空并标记完成
         resolve();
