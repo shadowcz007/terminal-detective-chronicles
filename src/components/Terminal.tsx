@@ -119,7 +119,7 @@ ${hasExistingCase ? '输入 \'status\' 查看当前案件状态' : ''}
         setLoadingText('');
         
         // 如果还有额外的结果信息，也添加到历史记录
-        if (result && result !== currentResponse) {
+        if (result && result !== currentResponse && result.trim()) {
           addToHistory(result);
         }
 

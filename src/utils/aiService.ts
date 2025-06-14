@@ -409,7 +409,45 @@ export const interrogateSuspect = async (
 3. 你有什么要隐瞒的吗？
 4. 有人能证明你的不在场证明吗？`;
   
-  return await llmRequest(prompt, gameState.apiConfig, onToken);
+  // 如果有onToken回调，说明需要流式效果
+  if (onToken) {
+    // 显示审问准备的混淆信息流
+    onToken(`\n=== 开始审问 ${suspect.name} ===\n`);
+    
+    // 启动混淆的单行流式效果
+    const streamingPromise = createSingleLineStreamingEffect(
+      (text: string, isComplete: boolean) => {
+        if (isComplete) {
+          onToken('\n开始记录对话...\n\n');
+        } else {
+          // 清除当前行并显示新内容
+          onToken(`\r${text}`);
+        }
+      }, 
+      2000
+    );
+    
+    // 同时在后台获取真实数据
+    const responsePromise = llmRequest(prompt, gameState.apiConfig, (token: string) => {
+      // 在流式效果完成后开始打字机效果
+      onToken(token);
+    });
+    
+    // 等待流式效果完成
+    await streamingPromise;
+    
+    // 等待真实响应完成
+    const response = await responsePromise;
+    
+    // 在审问结束后添加提示
+    onToken('\n\n提示: 注意观察回答中的矛盾和可疑之处');
+    onToken('\n输入其他命令继续调查，或审问其他嫌疑人\n');
+    
+    return response;
+  } else {
+    // 非流式模式
+    return await llmRequest(prompt, gameState.apiConfig);
+  }
 };
 
 export const generateCrimeScene = async (

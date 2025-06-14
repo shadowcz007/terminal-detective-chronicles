@@ -140,14 +140,21 @@ API配置已保留。
         const suspect = gameState.suspects[suspectIndex];
         updateGameState({ currentInterrogation: suspect.id });
         
-        const interrogationResult = await interrogateSuspect(suspect, gameState, onStreamToken);
-        return `
+        if (onStreamToken) {
+          // 如果支持流式输出，不返回额外信息，让流式输出自然完成
+          await interrogateSuspect(suspect, gameState, onStreamToken);
+          return ''; // 返回空字符串，避免重复显示
+        } else {
+          // 非流式模式
+          const interrogationResult = await interrogateSuspect(suspect, gameState);
+          return `
 === 审问记录: ${suspect.name} ===
 ${interrogationResult}
 
 提示: 注意观察回答中的矛盾和可疑之处
 输入其他命令继续调查，或审问其他嫌疑人
 `;
+        }
       } catch (error) {
         return `审问失败: ${error instanceof Error ? error.message : '未知错误'}`;
       }
