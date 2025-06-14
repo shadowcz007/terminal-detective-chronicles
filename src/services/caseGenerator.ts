@@ -10,48 +10,126 @@ export const generateCase = async (
   language: Language = 'zh'
 ): Promise<Partial<GameState>> => {
   const promptText = language === 'zh' ? 
-    `你是一个专业的推理小说作家。请生成一个复杂的谋杀案件，包含以下要素：
+    `你是一个专业的推理小说作家。请生成一个复杂的谋杀案件，严格按照以下JSON格式返回：
 
-1. 案件基本信息：
-   - 案件ID（格式：MH + 年份后两位 + 6位随机字符）
-   - 案件简述（2-3句话）
-   - 受害者姓名和身份
+{
+  "description": "案件简述（2-3句话描述案件概况）",
+  "victim": "受害者姓名和身份信息",
+  "suspects": [
+    {
+      "id": "1",
+      "name": "嫌疑人姓名",
+      "occupation": "职业",
+      "relationship": "与死者的关系",
+      "motive": "犯罪动机",
+      "alibi": "不在场证明"
+    },
+    {
+      "id": "2", 
+      "name": "嫌疑人姓名",
+      "occupation": "职业",
+      "relationship": "与死者的关系",
+      "motive": "犯罪动机",
+      "alibi": "不在场证明"
+    },
+    {
+      "id": "3",
+      "name": "嫌疑人姓名", 
+      "occupation": "职业",
+      "relationship": "与死者的关系",
+      "motive": "犯罪动机",
+      "alibi": "不在场证明"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "1",
+      "name": "证据名称",
+      "description": "证据详细描述",
+      "location": "发现地点"
+    },
+    {
+      "id": "2",
+      "name": "证据名称",
+      "description": "证据详细描述", 
+      "location": "发现地点"
+    },
+    {
+      "id": "3",
+      "name": "证据名称",
+      "description": "证据详细描述",
+      "location": "发现地点"
+    }
+  ],
+  "solution": "真相解释：指明真正的凶手（必须是嫌疑人中的一个）及其作案手法和真实动机"
+}
 
-2. 嫌疑人信息（3-4个）：
-   - 姓名、职业
-   - 与死者的关系
-   - 表面动机
-   - 不在场证明
+要求：
+1. 必须严格按照上述JSON格式输出，不要添加任何额外的文字说明
+2. 生成3个嫌疑人，每个都有完整的信息
+3. 生成3-4个关键证据
+4. 确保逻辑合理，线索丰富
+5. solution中必须指定真正的凶手（从嫌疑人中选择）` :
+    `You are a professional mystery novel writer. Please generate a complex murder case strictly following this JSON format:
 
-3. 关键证据（3-5个）：
-   - 证据名称
-   - 发现地点
-   - 详细描述
+{
+  "description": "Case summary (2-3 sentences describing the case overview)",
+  "victim": "Victim's name and identity information",
+  "suspects": [
+    {
+      "id": "1",
+      "name": "Suspect name",
+      "occupation": "Occupation",
+      "relationship": "Relationship with deceased",
+      "motive": "Criminal motive",
+      "alibi": "Alibi"
+    },
+    {
+      "id": "2",
+      "name": "Suspect name", 
+      "occupation": "Occupation",
+      "relationship": "Relationship with deceased",
+      "motive": "Criminal motive",
+      "alibi": "Alibi"
+    },
+    {
+      "id": "3",
+      "name": "Suspect name",
+      "occupation": "Occupation", 
+      "relationship": "Relationship with deceased",
+      "motive": "Criminal motive",
+      "alibi": "Alibi"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "1",
+      "name": "Evidence name",
+      "description": "Detailed evidence description",
+      "location": "Discovery location"
+    },
+    {
+      "id": "2", 
+      "name": "Evidence name",
+      "description": "Detailed evidence description",
+      "location": "Discovery location"
+    },
+    {
+      "id": "3",
+      "name": "Evidence name", 
+      "description": "Detailed evidence description",
+      "location": "Discovery location"
+    }
+  ],
+  "solution": "Truth explanation: Identify the real culprit (must be one of the suspects) and their method and true motive"
+}
 
-4. 真相：指定真正的凶手（从嫌疑人中选择）
-
-请用JSON格式返回，确保逻辑合理、线索丰富。` :
-    `You are a professional mystery novel writer. Please generate a complex murder case with the following elements:
-
-1. Basic case information:
-   - Case ID (format: MH + last two digits of year + 6 random characters)
-   - Case summary (2-3 sentences)
-   - Victim's name and identity
-
-2. Suspect information (3-4 people):
-   - Name, occupation
-   - Relationship with the deceased
-   - Apparent motive
-   - Alibi
-
-3. Key evidence (3-5 items):
-   - Evidence name
-   - Discovery location
-   - Detailed description
-
-4. Truth: Specify the real culprit (chosen from suspects)
-
-Please return in JSON format, ensuring logical consistency and rich clues.`;
+Requirements:
+1. Must strictly follow the above JSON format, do not add any additional text
+2. Generate 3 suspects, each with complete information
+3. Generate 3-4 key pieces of evidence
+4. Ensure logical consistency and rich clues
+5. Solution must specify the real culprit (chosen from suspects)`;
 
   // 如果有onToken回调，说明需要流式效果
   if (onToken) {
@@ -110,18 +188,31 @@ const parseCaseResponse = (response: string, language: Language): Partial<GameSt
       if (match) {
         jsonContent = match[1];
       }
+    } else if (response.includes('```')) {
+      // 处理没有json标记的代码块
+      const match = response.match(/```\n([\s\S]*?)\n```/);
+      if (match) {
+        jsonContent = match[1];
+      }
     }
     
+    // 清理可能的多余字符
+    jsonContent = jsonContent.trim();
+    
     const caseData = JSON.parse(jsonContent);
+    
+    // 确保数据结构完整性
     return {
       caseId: `MH${new Date().getFullYear().toString().slice(-2)}${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
-      caseDescription: caseData.description,
-      victim: caseData.victim,
-      suspects: caseData.suspects,
-      evidence: caseData.evidence,
-      solution: caseData.solution
+      caseDescription: caseData.description || '未知案件',
+      victim: caseData.victim || '未知受害者',
+      suspects: caseData.suspects || [],
+      evidence: caseData.evidence || [],
+      solution: caseData.solution || '未知真相'
     };
   } catch (error) {
+    console.error('JSON解析错误:', error);
+    console.error('原始响应:', response);
     throw new Error(t('caseGenerationFailed', language, { 
       error: error instanceof Error ? error.message : t('unknownError', language)
     }));
