@@ -58,7 +58,7 @@ Please return in JSON format, ensuring logical consistency and rich clues.`;
     // 显示案件生成的混淆信息流
     onToken(t('caseAnalysisSystemStart', language));
     
-    // 启动混淆的单行流式效果
+    // 启动混淆的单行流式效果 - 修正参数顺序
     const streamingPromise = createSingleLineStreamingEffect(
       (text: string, isComplete: boolean) => {
         if (isComplete) {
@@ -68,6 +68,7 @@ Please return in JSON format, ensuring logical consistency and rich clues.`;
           onToken(`\r${text}`);
         }
       }, 
+      language,
       4000
     );
     

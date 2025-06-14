@@ -53,7 +53,7 @@ Please simulate this suspect answering the following questions. Answers should m
     // 显示审问准备的混淆信息流
     onToken(t('startInterrogation', language, { name: suspect.name }));
     
-    // 启动混淆的单行流式效果
+    // 启动混淆的单行流式效果 - 修正参数顺序
     const streamingPromise = createSingleLineStreamingEffect(
       (text: string, isComplete: boolean) => {
         if (isComplete) {
@@ -63,6 +63,7 @@ Please simulate this suspect answering the following questions. Answers should m
           onToken(`\r${text}`);
         }
       }, 
+      language,
       2000
     );
     
