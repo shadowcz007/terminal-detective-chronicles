@@ -33,6 +33,14 @@ AI 侦探终端 v2.1.5 | 当前案件ID: #{{caseId}}
     startInterrogation: '\n=== 开始审问 {{name}} ===\n',
     startRecording: '\n开始记录对话...\n\n',
     
+    // LLM Client errors
+    apiKeyNotConfigured: 'API密钥未配置，请先在config中设置',
+    apiEndpointNotConfigured: 'API端点未配置，请先在config中设置',
+    apiRequestFailed: 'API请求失败',
+    emptyResponseBody: '响应体为空',
+    networkRequestFailed: '网络请求失败',
+    invalidApiResponse: 'API响应格式错误',
+    
     // 案件信息
     caseInfo: `
 === 当前案件信息 ===
@@ -194,6 +202,14 @@ Type 'new_case' to start a new case
     caseFileGenerationComplete: '\nCase file generation complete!\n',
     startInterrogation: '\n=== Starting interrogation of {{name}} ===\n',
     startRecording: '\nStarting conversation recording...\n\n',
+    
+    // LLM Client errors
+    apiKeyNotConfigured: 'API key not configured, please set it in config first',
+    apiEndpointNotConfigured: 'API endpoint not configured, please set it in config first',
+    apiRequestFailed: 'API request failed',
+    emptyResponseBody: 'Empty response body',
+    networkRequestFailed: 'Network request failed',
+    invalidApiResponse: 'Invalid API response format',
     
     // 案件信息
     caseInfo: `
