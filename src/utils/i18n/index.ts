@@ -6,6 +6,7 @@ import { caseTranslations } from './case';
 import { configTranslations } from './config';
 import { gameFragmentsTranslations } from './gameFragments';
 import { difficultyTranslations } from './difficulty';
+import { welcomeTranslations } from './welcome';
 
 export type Language = 'zh' | 'en';
 
@@ -18,6 +19,7 @@ export const translations = {
     ...configTranslations.zh,
     ...gameFragmentsTranslations.zh,
     ...difficultyTranslations.zh,
+    ...welcomeTranslations.zh,
   },
   en: {
     ...systemTranslations.en,
@@ -27,6 +29,7 @@ export const translations = {
     ...configTranslations.en,
     ...gameFragmentsTranslations.en,
     ...difficultyTranslations.en,
+    ...welcomeTranslations.en,
   }
 };
 
