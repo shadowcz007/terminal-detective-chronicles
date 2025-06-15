@@ -7,7 +7,7 @@ export interface LanguageConfig {
   current: Language;
 }
 
-const DEFAULT_LANGUAGE: Language = 'zh';
+const DEFAULT_LANGUAGE: Language = 'en';
 
 // 从本地存储加载语言设置
 const loadLanguage = (): Language => {

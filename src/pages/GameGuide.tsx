@@ -101,7 +101,7 @@ const GameGuide = () => {
                         {t(command.desc, language)}
                       </CardDescription>
                       <div className="bg-slate-800/50 rounded-md p-3 font-mono text-sm text-green-400 border border-slate-700">
-                        > {command.example}
+                        {'> '}{command.example}
                       </div>
                     </CardContent>
                   </Card>
@@ -177,7 +177,7 @@ const GameGuide = () => {
                       </h3>
                       <p className="mb-3">{t('aiSetupDesc', language)}</p>
                       <div className="bg-slate-800/50 rounded-md p-3 font-mono text-sm text-green-400 border border-slate-700">
-                        > config
+                        {'> config'}
                       </div>
                     </div>
                     <div>
@@ -186,7 +186,7 @@ const GameGuide = () => {
                       </h3>
                       <p className="mb-3">{t('difficultyDesc', language)}</p>
                       <div className="bg-slate-800/50 rounded-md p-3 font-mono text-sm text-green-400 border border-slate-700">
-                        > difficulty easy/medium/hard
+                        {'> difficulty easy/medium/hard'}
                       </div>
                     </div>
                   </div>

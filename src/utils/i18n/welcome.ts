@@ -7,8 +7,8 @@ export const welcomeTranslations = {
     // 游戏特色
     feature1Title: '时空穿越',
     feature1Desc: '在不同时间线中调查案件，发现隐藏的线索',
-    feature2Title: '智能推理',
-    feature2Desc: '运用AI技术生成复杂的案件和角色',
+    feature2Title: '无限世界',
+    feature2Desc: '基于现实的复杂案件和角色，每次都有全新体验',
     feature3Title: '多维审讯',
     feature3Desc: '与嫌疑人进行深度对话，挖掘真相',
     feature4Title: '悖论解谜',
@@ -74,8 +74,8 @@ export const welcomeTranslations = {
     // Game features
     feature1Title: 'Time Travel',
     feature1Desc: 'Investigate cases across different timelines and discover hidden clues',
-    feature2Title: 'AI Reasoning', 
-    feature2Desc: 'Utilize AI technology to generate complex cases and characters',
+    feature2Title: 'Infinite Worlds', 
+    feature2Desc: 'Reality-based complex cases and characters, bringing fresh experiences every time',
     feature3Title: 'Multi-dimensional Interrogation',
     feature3Desc: 'Engage in deep conversations with suspects to uncover the truth',
     feature4Title: 'Paradox Solving',
