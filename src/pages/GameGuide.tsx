@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../hooks/useLanguage';
@@ -7,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Terminal, Lightbulb, Target, Settings } from 'lucide-react';
+import { Terminal, Lightbulb, Target, Settings, Play } from 'lucide-react';
 
 const GameGuide = () => {
   const { language, toggleLanguage } = useLanguage();
@@ -35,15 +34,8 @@ const GameGuide = () => {
       </div>
 
       <div className="relative z-10 container mx-auto px-4 py-8">
-        {/* 顶部导航 */}
-        <div className="flex justify-between items-center mb-8">
-          <Link to="/">
-            <Button variant="ghost" className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10">
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              {t('backToHome', language)}
-            </Button>
-          </Link>
-          
+        {/* 顶部语言切换 - 移除返回首页按钮，因为现在就是首页 */}
+        <div className="flex justify-end mb-8">
           <div className="flex items-center space-x-2 text-sm bg-black/20 backdrop-blur-sm rounded-full px-4 py-2">
             <span className={language === 'zh' ? 'text-cyan-400' : 'text-gray-400'}>中</span>
             <Switch
@@ -200,6 +192,7 @@ const GameGuide = () => {
         <div className="text-center mt-12">
           <Link to="/terminal">
             <Button size="lg" className="bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white font-semibold px-8 py-4 text-lg shadow-lg hover:shadow-cyan-500/25 transition-all duration-300">
+              <Play className="w-6 h-6 mr-2" />
               {t('startPlayingNow', language)}
             </Button>
           </Link>
