@@ -1,4 +1,3 @@
-
 export interface TimestampInfo {
   current: Date;
   historical: Date;
@@ -10,37 +9,74 @@ export interface TimestampInfo {
   seasonalContext: string;
   economicContext: string;
   technologicalContext: string;
+  randomSeed: number;
+  timeVariant: string;
 }
 
 export const generateTimestamps = (): TimestampInfo => {
   const current = new Date();
   
-  // Generate more varied time intervals (1-80 years ago with weighted distribution)
-  const timeRanges = [
-    { min: 1, max: 5, weight: 0.15 },    // 近期事件
-    { min: 5, max: 15, weight: 0.25 },   // 现代历史
-    { min: 15, max: 30, weight: 0.30 },  // 当代历史
-    { min: 30, max: 50, weight: 0.20 },  // 中期历史
-    { min: 50, max: 80, weight: 0.10 }   // 远期历史
-  ];
+  // **增强随机性：基于当前时间戳生成种子**
+  const currentTimestamp = current.getTime();
+  const randomBase = Math.sin(currentTimestamp) * 10000;
+  const randomSeed = Math.abs(randomBase - Math.floor(randomBase));
   
-  const selectedRange = selectWeightedRange(timeRanges);
-  const yearsAgo = Math.floor(Math.random() * (selectedRange.max - selectedRange.min + 1)) + selectedRange.min;
+  // **基于时间戳的复合随机数生成器**
+  const seededRandom = (seed: number, multiplier: number = 1) => {
+    const x = Math.sin(seed * multiplier) * 10000;
+    return x - Math.floor(x);
+  };
+  
+  // **动态时间范围选择：基于时间戳的分布**
+  const timeDistribution = seededRandom(randomSeed, 12.345);
+  let yearsAgo: number;
+  
+  if (timeDistribution < 0.1) {
+    // 10% - 极近期事件 (1-3年)
+    yearsAgo = Math.floor(seededRandom(randomSeed, 23.456) * 3) + 1;
+  } else if (timeDistribution < 0.25) {
+    // 15% - 近期事件 (3-8年)
+    yearsAgo = Math.floor(seededRandom(randomSeed, 34.567) * 6) + 3;
+  } else if (timeDistribution < 0.50) {
+    // 25% - 现代历史 (8-20年)
+    yearsAgo = Math.floor(seededRandom(randomSeed, 45.678) * 13) + 8;
+  } else if (timeDistribution < 0.75) {
+    // 25% - 当代历史 (20-40年)
+    yearsAgo = Math.floor(seededRandom(randomSeed, 56.789) * 21) + 20;
+  } else if (timeDistribution < 0.90) {
+    // 15% - 中期历史 (40-60年)
+    yearsAgo = Math.floor(seededRandom(randomSeed, 67.890) * 21) + 40;
+  } else {
+    // 10% - 远期历史 (60-100年)
+    yearsAgo = Math.floor(seededRandom(randomSeed, 78.901) * 41) + 60;
+  }
   
   const historical = new Date();
   historical.setFullYear(current.getFullYear() - yearsAgo);
   
-  // Add more realistic date variation
-  historical.setMonth(Math.floor(Math.random() * 12));
-  historical.setDate(Math.floor(Math.random() * 28) + 1);
+  // **高度随机化的日期设置**
+  const monthSeed = seededRandom(randomSeed, 89.012);
+  const daySeed = seededRandom(randomSeed, 90.123);
+  const hourSeed = seededRandom(randomSeed, 101.234);
+  const minuteSeed = seededRandom(randomSeed, 112.345);
   
-  // Add time of day variation for more realistic timestamps
-  historical.setHours(Math.floor(Math.random() * 24));
-  historical.setMinutes(Math.floor(Math.random() * 60));
+  historical.setMonth(Math.floor(monthSeed * 12));
+  historical.setDate(Math.floor(daySeed * 28) + 1); // 避免月末日期问题
+  historical.setHours(Math.floor(hourSeed * 24));
+  historical.setMinutes(Math.floor(minuteSeed * 60));
   
   const currentFormatted = formatDate(current);
   const historicalFormatted = formatDate(historical);
   const historicalYear = historical.getFullYear();
+  
+  // **时间变体：增加叙事层次**
+  const timeVariants = [
+    '历史转折点', '关键时刻', '变革时期', '动荡年代', 
+    '繁荣时光', '衰落时代', '复兴时期', '过渡阶段',
+    '黄金年代', '困难时期', '突破时刻', '沉寂岁月'
+  ];
+  const variantIndex = Math.floor(seededRandom(randomSeed, 123.456) * timeVariants.length);
+  const timeVariant = timeVariants[variantIndex];
   
   return {
     current,
@@ -49,25 +85,13 @@ export const generateTimestamps = (): TimestampInfo => {
     historicalFormatted,
     yearsDifference: yearsAgo,
     historicalPeriod: getHistoricalPeriod(historicalYear),
-    historicalContext: getHistoricalContext(historicalYear),
-    seasonalContext: getSeasonalContext(historical.getMonth()),
+    historicalContext: getHistoricalContext(historicalYear, randomSeed),
+    seasonalContext: getSeasonalContext(historical.getMonth(), randomSeed),
     economicContext: getEconomicContext(historicalYear),
-    technologicalContext: getTechnologicalContext(historicalYear)
+    technologicalContext: getTechnologicalContext(historicalYear),
+    randomSeed,
+    timeVariant
   };
-};
-
-const selectWeightedRange = (ranges: Array<{min: number, max: number, weight: number}>) => {
-  const random = Math.random();
-  let cumulative = 0;
-  
-  for (const range of ranges) {
-    cumulative += range.weight;
-    if (random <= cumulative) {
-      return range;
-    }
-  }
-  
-  return ranges[ranges.length - 1];
 };
 
 const formatDate = (date: Date): string => {
@@ -102,7 +126,13 @@ const getHistoricalPeriod = (year: number): string => {
   return '战争与动荡时代';
 };
 
-export const getHistoricalContext = (year: number): string[] => {
+// **增强历史背景选择的随机性**
+export const getHistoricalContext = (year: number, randomSeed: number): string[] => {
+  const seededRandom = (seed: number, multiplier: number = 1) => {
+    const x = Math.sin(seed * multiplier) * 10000;
+    return x - Math.floor(x);
+  };
+
   const contexts: Record<string, string[]> = {
     '2020-2024': [
       'COVID-19疫情彻底改变全球社会结构和工作方式',
@@ -111,7 +141,11 @@ export const getHistoricalContext = (year: number): string[] => {
       '新能源汽车和可持续发展成为全球共识',
       '元宇宙概念兴起，虚拟现实技术快速发展',
       '供应链危机暴露全球化脆弱性',
-      '加密货币市场剧烈波动，Web3概念普及'
+      '加密货币市场剧烈波动，Web3概念普及',
+      '短视频平台重塑社交媒体格局',
+      '碳中和目标推动能源结构转型',
+      '芯片短缺影响全球制造业',
+      '远程医疗和数字健康技术普及'
     ],
     '2015-2019': [
       '移动支付在中国完全普及，改变消费习惯',
@@ -120,7 +154,11 @@ export const getHistoricalContext = (year: number): string[] => {
       '电子商务彻底重塑传统零售业态',
       '社交媒体影响力达到历史顶峰',
       '中美贸易摩擦升级，全球化遭遇挑战',
-      '新能源技术突破，特斯拉引领汽车革命'
+      '新能源技术突破，特斯拉引领汽车革命',
+      '直播经济兴起，网红经济蓬勃发展',
+      '区块链技术从概念走向应用',
+      '5G技术标准确立，通信革命来临',
+      '共享单车改变城市出行方式'
     ],
     '2010-2014': [
       'iPhone和Android引发智能手机革命',
@@ -253,33 +291,125 @@ export const getHistoricalContext = (year: number): string[] => {
   for (const [period, events] of Object.entries(contexts)) {
     const [start, end] = period.split('-').map(Number);
     if (year >= start && year <= end) {
-      // 随机选择3-5个事件，让每次生成都有不同的组合
-      const shuffled = [...events].sort(() => 0.5 - Math.random());
-      const count = Math.floor(Math.random() * 3) + 3; // 3-5个事件
+      // **基于随机种子的事件选择**
+      const shuffled = [...events].sort((a, b) => {
+        const aHash = seededRandom(randomSeed, a.charCodeAt(0));
+        const bHash = seededRandom(randomSeed, b.charCodeAt(0));
+        return aHash - bHash;
+      });
+      
+      // **动态数量选择：3-6个事件**
+      const countSeed = seededRandom(randomSeed, 999.888);
+      const count = Math.floor(countSeed * 4) + 3; // 3-6个事件
+      
       return shuffled.slice(0, count);
     }
   }
   
-  return ['传统社会向现代社会转型期', '工业化和城市化进程加速', '科学技术开始影响日常生活'];
+  // **默认情况的随机化**
+  const defaultEvents = [
+    '传统社会向现代社会转型期', 
+    '工业化和城市化进程加速', 
+    '科学技术开始影响日常生活',
+    '社会价值观念发生重大变化',
+    '国际关系格局重新洗牌',
+    '经济发展模式面临转型'
+  ];
+  
+  const shuffled = defaultEvents.sort((a, b) => {
+    const aHash = seededRandom(randomSeed, a.charCodeAt(0) * 1.1);
+    const bHash = seededRandom(randomSeed, b.charCodeAt(0) * 1.1);
+    return aHash - bHash;
+  });
+  
+  return shuffled.slice(0, 3);
 };
 
-const getSeasonalContext = (month: number): string => {
-  const seasons = {
-    0: '新年伊始，万象更新的希望季节',
-    1: '立春时节，万物复苏的transition期',
-    2: '春暖花开，生机勃勃的成长季节',
-    3: '春夏之交，活力四射的青春季节',
-    4: '初夏时光，热情洋溢的激情季节',
-    5: '仲夏夜梦，充满可能的浪漫季节',
-    6: '盛夏炎炎，热烈奔放的狂欢季节',
-    7: '夏末秋初，收获在望的转折季节',
-    8: '金秋九月，硕果累累的丰收季节',
-    9: '深秋十月，叶落归根的沉思季节',
-    10: '初冬时节，萧瑟中蕴含坚韧的季节',
-    11: '隆冬腊月，万物蛰伏的沉寂季节'
+// **增强季节背景的随机性**
+const getSeasonalContext = (month: number, randomSeed: number): string => {
+  const seededRandom = (seed: number, multiplier: number = 1) => {
+    const x = Math.sin(seed * multiplier) * 10000;
+    return x - Math.floor(x);
+  };
+
+  const seasonVariants: Record<number, string[]> = {
+    0: [
+      '新年伊始，万象更新的希望季节',
+      '寒冬腊月，新旧交替的关键时刻',
+      '元旦时光，充满憧憬的起始点',
+      '隆冬季节，沉思与规划的时期'
+    ],
+    1: [
+      '立春时节，万物复苏的transition期',
+      '早春二月，生机初显的萌动时光',
+      '春寒料峭，希望与挑战并存的时期',
+      '节后时光，重新出发的关键节点'
+    ],
+    2: [
+      '春暖花开，生机勃勃的成长季节',
+      '阳春三月，活力四射的复苏时期',
+      '春分时节，昼夜平分的平衡时刻',
+      '春风和煦，充满可能的美好时光'
+    ],
+    3: [
+      '春夏之交，活力四射的青春季节',
+      '清明时节，追思与前进并存的时期',
+      '春意盎然，万物竞发的繁荣时光',
+      '谷雨时节，播种希望的关键时刻'
+    ],
+    4: [
+      '初夏时光，热情洋溢的激情季节',
+      '立夏时节，阳光明媚的活跃时期',
+      '暮春初夏，新旧交替的转折点',
+      '五月花季，浪漫与理想的时光'
+    ],
+    5: [
+      '仲夏夜梦，充满可能的浪漫季节',
+      '端午时节，传统与现代交融的时期',
+      '初夏炎热，激情燃烧的黄金时光',
+      '芒种时节，收获希望的忙碌时期'
+    ],
+    6: [
+      '盛夏炎炎，热烈奔放的狂欢季节',
+      '夏至时节，白昼最长的极致时刻',
+      '酷暑时光，挑战与机遇并存的时期',
+      '仲夏夜晚，神秘与浪漫的完美融合'
+    ],
+    7: [
+      '夏末秋初，收获在望的转折季节',
+      '大暑时节，炎热达到顶峰的时期',
+      '盛夏尾声，反思与准备的关键时刻',
+      '七月流火，激情与理性交织的时光'
+    ],
+    8: [
+      '金秋九月，硕果累累的丰收季节',
+      '立秋时节，炎热渐消的转换时期',
+      '处暑时节，暑气渐散的舒适时光',
+      '秋高气爽，收获成果的黄金时期'
+    ],
+    9: [
+      '深秋十月，叶落归根的沉思季节',
+      '秋分时节，昼夜等长的平衡时刻',
+      '寒露时节，秋意渐浓的诗意时光',
+      '金桂飘香，成熟与智慧的体现时期'
+    ],
+    10: [
+      '初冬时节，萧瑟中蕴含坚韧的季节',
+      '立冬时节，万物准备过冬的时期',
+      '深秋初冬，沉淀与思考的关键时刻',
+      '霜降时节，考验意志的挑战时光'
+    ],
+    11: [
+      '隆冬腊月，万物蛰伏的沉寂季节',
+      '大雪时节，银装素裹的纯净时期',
+      '年末岁首，总结与展望的时刻',
+      '冬至时节，黑夜最长的深度思考期'
+    ]
   };
   
-  return seasons[month as keyof typeof seasons] || '四季轮回的自然季节';
+  const variants = seasonVariants[month] || ['四季轮回的自然季节'];
+  const index = Math.floor(seededRandom(randomSeed, month * 12.34) * variants.length);
+  return variants[index];
 };
 
 const getEconomicContext = (year: number): string => {
