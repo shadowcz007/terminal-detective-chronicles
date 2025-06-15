@@ -1,4 +1,5 @@
 
+
 import { GameState } from '../types/gameTypes';
 import { Language, t } from './i18n';
 import { generateCase, interrogateSuspect, generateCrimeScene } from './aiService';
@@ -320,7 +321,7 @@ ${t('suspectsOverview', language)}`;
             startMessage: t('startInterrogation', language, { name: suspect.name }),
             completeMessage: t('interrogationStarted', language, { name: suspect.name }),
             tipMessage: t('interrogationTip', language),
-            displayRealResult: true // 关键：设置为 true 以显示实际审问结果
+            displayRealResult: true
           }, onStreamToken);
           
           const interrogationEndTime = Date.now();
@@ -330,7 +331,7 @@ ${t('suspectsOverview', language)}`;
             console.log(`📝 Result length: ${result?.length || 0} characters`);
             
             // 显示完整的结果内容调试信息
-            console.log(`📄 FINAL INTERROGATION RESULT for ${suspect.name}:`);
+            console.log(`📄 FINAL STREAMING INTERROGATION RESULT for ${suspect.name}:`);
             console.log(`--- BEGIN RESULT ---`);
             console.log(result);
             console.log(`--- END RESULT ---`);
@@ -348,9 +349,16 @@ ${t('suspectsOverview', language)}`;
             console.log(`   - Contains suspect occupation: ${result?.includes(suspect.occupation) ? 'YES' : 'NO'}`);
             console.log(`   - Has substantial content: ${(result?.length || 0) > 100 ? 'YES' : 'NO'}`);
             console.log(`   - Session ID: ${interrogationSessionId}`);
+            
+            // 检查结果是否已经通过 onStreamToken 显示
+            console.log(`🖥️ UI DISPLAY STATUS:`);
+            console.log(`   - Result should be displayed via onStreamToken: YES`);
+            console.log(`   - displayRealResult was set to: true`);
+            console.log(`   - Returning empty string to avoid duplication: YES`);
           }
           
-          return ''; // 返回空字符串，因为结果已经通过 onStreamToken 显示
+          // 在流式模式下，结果已经通过 onStreamToken 显示，返回空字符串避免重复显示
+          return '';
         } else {
           // 非流式模式
           const interrogationResult = await interrogateSuspect(suspect, updatedGameState, undefined, language);
@@ -368,6 +376,10 @@ ${t('suspectsOverview', language)}`;
             } else {
               console.log(`✅ Non-streaming result consistency check passed for ${suspect.name}`);
             }
+            
+            console.log(`🖥️ UI DISPLAY STATUS:`);
+            console.log(`   - Result will be displayed via return value: YES`);
+            console.log(`   - Non-streaming mode: YES`);
           }
           
           return `
@@ -581,3 +593,4 @@ ${apiConfig.key ? t('configuredApiKey', language) : t('unconfiguredApiKey', lang
       return t('unknownCommand', language, { cmd });
   }
 };
+
