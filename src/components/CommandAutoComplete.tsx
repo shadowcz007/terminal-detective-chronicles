@@ -135,7 +135,7 @@ const CommandAutoComplete: React.FC<CommandAutoCompleteProps> = ({
                       px-4 py-3 cursor-pointer transition-all duration-200 relative
                       ${cmd.originalIndex === selectedIndex 
                         ? 'bg-cyan-500/20 border-l-2 border-cyan-400' 
-                        : 'hover:bg-black/40'
+                        : 'hover:bg-black/70 hover:border-l-2 hover:border-cyan-400/50'
                       }
                     `}
                     style={cmd.originalIndex === selectedIndex ? {
