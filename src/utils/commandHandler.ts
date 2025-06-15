@@ -1,3 +1,4 @@
+
 import { GameState } from '../types/gameTypes';
 import { Language, t } from './i18n';
 import { generateCase, interrogateSuspect, generateCrimeScene } from './aiService';
@@ -328,12 +329,25 @@ ${t('suspectsOverview', language)}`;
             console.log(`⏱️ Interrogation duration: ${interrogationEndTime - interrogationStartTime}ms`);
             console.log(`📝 Result length: ${result?.length || 0} characters`);
             
+            // 显示完整的结果内容调试信息
+            console.log(`📄 FINAL INTERROGATION RESULT for ${suspect.name}:`);
+            console.log(`--- BEGIN RESULT ---`);
+            console.log(result);
+            console.log(`--- END RESULT ---`);
+            
             // 结果一致性检查
             if (result && !result.includes(suspect.name)) {
               console.warn(`⚠️ CONSISTENCY WARNING: Result may not match suspect ${suspect.name}`);
             } else {
               console.log(`✅ Result consistency check passed for ${suspect.name}`);
             }
+            
+            // 结果质量分析
+            console.log(`🔍 RESULT ANALYSIS for ${suspect.name}:`);
+            console.log(`   - Contains suspect name: ${result?.includes(suspect.name) ? 'YES' : 'NO'}`);
+            console.log(`   - Contains suspect occupation: ${result?.includes(suspect.occupation) ? 'YES' : 'NO'}`);
+            console.log(`   - Has substantial content: ${(result?.length || 0) > 100 ? 'YES' : 'NO'}`);
+            console.log(`   - Session ID: ${interrogationSessionId}`);
           }
           
           return ''; // 返回空字符串，因为结果已经通过 onStreamToken 显示
@@ -341,11 +355,18 @@ ${t('suspectsOverview', language)}`;
           // 非流式模式
           const interrogationResult = await interrogateSuspect(suspect, updatedGameState, undefined, language);
           
-          // 验证结果一致性
+          // 验证结果一致性和显示调试信息
           if (process.env.NODE_ENV === 'development') {
             console.log(`📋 Non-streaming result for ${suspect.name}:`, interrogationResult?.substring(0, 100) + '...');
+            console.log(`📄 FULL NON-STREAMING RESULT for ${suspect.name}:`);
+            console.log(`--- BEGIN RESULT ---`);
+            console.log(interrogationResult);
+            console.log(`--- END RESULT ---`);
+            
             if (interrogationResult && !interrogationResult.includes(suspect.name)) {
               console.warn(`⚠️ CONSISTENCY WARNING: Non-streaming result may not match suspect ${suspect.name}`);
+            } else {
+              console.log(`✅ Non-streaming result consistency check passed for ${suspect.name}`);
             }
           }
           
@@ -360,6 +381,12 @@ ${t('interrogationTip', language)}
         // 错误处理时也要记录调试信息
         if (process.env.NODE_ENV === 'development') {
           console.error(`❌ Interrogation failed for suspect index ${suspectIndex}:`, error);
+          console.error(`🔍 Error details:`, {
+            suspectIndex,
+            suspectExists: !!gameState.suspects[suspectIndex],
+            errorMessage: error instanceof Error ? error.message : 'Unknown error',
+            stackTrace: error instanceof Error ? error.stack : 'No stack trace'
+          });
         }
         
         return t('interrogationFailed', language, {
