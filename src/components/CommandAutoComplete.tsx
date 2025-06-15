@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { commandSuggestions, getFilteredSuggestions, CommandSuggestion } from '../utils/commandSuggestions';
@@ -131,18 +132,32 @@ const CommandAutoComplete: React.FC<CommandAutoCompleteProps> = ({
                   <CommandItem
                     key={cmd.command}
                     onSelect={() => onSelect(cmd.command)}
-                    className={`
-                      px-4 py-3 cursor-pointer transition-all duration-200 relative
-                      ${cmd.originalIndex === selectedIndex 
-                        ? 'bg-cyan-500/20 border-l-2 border-cyan-400' 
-                        : 'hover:bg-black/70 hover:border-l-2 hover:border-cyan-400/50'
-                      }
-                    `}
+                    className="px-4 py-3 cursor-pointer transition-all duration-200 relative data-[selected=true]:bg-transparent hover:bg-transparent"
                     style={cmd.originalIndex === selectedIndex ? {
+                      background: 'rgba(34, 211, 238, 0.2)',
+                      borderLeft: '2px solid rgba(34, 211, 238, 1)',
                       boxShadow: 'inset 0 0 20px rgba(34, 211, 238, 0.1)'
-                    } : undefined}
+                    } : {}}
+                    onMouseEnter={() => setSelectedIndex(cmd.originalIndex)}
                   >
-                    <div className="flex flex-col space-y-1 w-full">
+                    <div 
+                      className="flex flex-col space-y-1 w-full"
+                      style={cmd.originalIndex !== selectedIndex ? {
+                        background: 'transparent'
+                      } : {}}
+                      onMouseOver={(e) => {
+                        if (cmd.originalIndex !== selectedIndex) {
+                          (e.currentTarget.parentElement as HTMLElement).style.background = 'rgba(0, 0, 0, 0.7)';
+                          (e.currentTarget.parentElement as HTMLElement).style.borderLeft = '2px solid rgba(34, 211, 238, 0.5)';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (cmd.originalIndex !== selectedIndex) {
+                          (e.currentTarget.parentElement as HTMLElement).style.background = 'transparent';
+                          (e.currentTarget.parentElement as HTMLElement).style.borderLeft = 'none';
+                        }
+                      }}
+                    >
                       <div className="flex items-center justify-between">
                         <span className="font-mono text-cyan-300 font-semibold">
                           {cmd.command}
