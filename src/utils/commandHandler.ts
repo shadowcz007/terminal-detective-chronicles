@@ -1,4 +1,3 @@
-
 import { GameState } from '../types/gameTypes';
 import { Language, t } from './i18n';
 import { generateCase, interrogateSuspect, generateCrimeScene } from './aiService';
@@ -6,6 +5,8 @@ import { handleDifficultyCommands } from '../commands/difficultyCommands';
 import { handleProgressCommands } from '../commands/progressCommands';
 import { ProgressManager } from '../features/progress/progressManager';
 import { formatCaseAsMarkdown, downloadMarkdownFile } from './exportUtils';
+import { executeStreamingRequest } from './streamingUtils';
+import { getInterrogationPrompt } from './prompts';
 
 export const executeCommand = async (
   command: string, 
@@ -304,37 +305,38 @@ ${t('suspectsOverview', language)}`;
         }
         
         if (onStreamToken) {
-          // 流式模式：添加结果一致性验证
+          // 流式模式：使用 executeStreamingRequest 并设置 displayRealResult: true
           const interrogationStartTime = Date.now();
           
-          // 在开始审问前验证嫌疑人信息
           if (process.env.NODE_ENV === 'development') {
-            console.log(`🚀 Starting interrogation of ${suspect.name} at ${new Date(interrogationStartTime).toISOString()}`);
+            console.log(`🚀 Starting streaming interrogation of ${suspect.name} at ${new Date(interrogationStartTime).toISOString()}`);
           }
           
-          const interrogationResult = await interrogateSuspect(suspect, updatedGameState, onStreamToken, language);
+          const result = await executeStreamingRequest({
+            promptText: getInterrogationPrompt(suspect, updatedGameState, language),
+            apiConfig: gameState.apiConfig,
+            language,
+            startMessage: t('startInterrogation', language, { name: suspect.name }),
+            completeMessage: t('interrogationStarted', language, { name: suspect.name }),
+            tipMessage: t('interrogationTip', language),
+            displayRealResult: true // 关键：设置为 true 以显示实际审问结果
+          }, onStreamToken);
           
-          // 验证结果一致性
           const interrogationEndTime = Date.now();
           if (process.env.NODE_ENV === 'development') {
-            console.log(`🏁 Interrogation completed for ${suspect.name} at ${new Date(interrogationEndTime).toISOString()}`);
+            console.log(`🏁 Streaming interrogation completed for ${suspect.name} at ${new Date(interrogationEndTime).toISOString()}`);
             console.log(`⏱️ Interrogation duration: ${interrogationEndTime - interrogationStartTime}ms`);
-            console.log(`📝 Result length: ${interrogationResult?.length || 0} characters`);
+            console.log(`📝 Result length: ${result?.length || 0} characters`);
             
             // 结果一致性检查
-            if (interrogationResult && !interrogationResult.includes(suspect.name)) {
+            if (result && !result.includes(suspect.name)) {
               console.warn(`⚠️ CONSISTENCY WARNING: Result may not match suspect ${suspect.name}`);
             } else {
               console.log(`✅ Result consistency check passed for ${suspect.name}`);
             }
           }
           
-          // 显示审问结果
-          if (interrogationResult) {
-            onStreamToken(`\n${interrogationResult}\n`);
-          }
-          
-          return ''; // 返回空字符串，避免重复显示
+          return ''; // 返回空字符串，因为结果已经通过 onStreamToken 显示
         } else {
           // 非流式模式
           const interrogationResult = await interrogateSuspect(suspect, updatedGameState, undefined, language);

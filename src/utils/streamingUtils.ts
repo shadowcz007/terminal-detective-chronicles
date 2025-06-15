@@ -11,13 +11,22 @@ interface StreamingOptions {
   startMessage: string;
   completeMessage: string;
   tipMessage?: string;
+  displayRealResult?: boolean; // 新增参数，默认为 false
 }
 
 export const executeStreamingRequest = async (
   options: StreamingOptions,
   onToken?: (token: string) => void
 ): Promise<string> => {
-  const { promptText, apiConfig, language, startMessage, completeMessage, tipMessage } = options;
+  const { 
+    promptText, 
+    apiConfig, 
+    language, 
+    startMessage, 
+    completeMessage, 
+    tipMessage,
+    displayRealResult = false // 默认为 false
+  } = options;
 
   // 如果有onToken回调，说明需要流式效果
   if (onToken) {
@@ -52,16 +61,11 @@ export const executeStreamingRequest = async (
     // 停止混淆效果并显示完成信息
     onToken(`\n${completeMessage}\n`);
     
-    // 现在开始流式显示真实的结果内容
-    // const chars = streamingResult.split('');
-    // for (let i = 0; i < chars.length; i++) {
-    //   onToken(chars[i]);
-    //   // 添加延迟以实现打字机效果
-    //   await new Promise(resolve => setTimeout(resolve, 30));
-    // }
-    
-    // 直接显示完整结果（临时）
-    // onToken(streamingResult);
+    // 根据 displayRealResult 参数决定是否显示真实结果
+    if (displayRealResult) {
+      // 显示真实的API结果
+      onToken(streamingResult);
+    }
     
     // 如果有提示信息，显示提示
     if (tipMessage) {
