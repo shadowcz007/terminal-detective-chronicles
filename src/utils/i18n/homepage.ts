@@ -1,0 +1,47 @@
+
+export const homepageTranslations = {
+  zh: {
+    gameTitle: 'CHRONOS',
+    gameSubtitle: '时空探案系统',
+    heroDescription: '体验AI驱动的推理解谜游戏，在时空裂隙中追寻真相',
+    aiCaseGeneration: 'AI案件生成',
+    aiCaseGenerationDesc: '无限随机案件，每次游戏都是全新挑战',
+    intelligentInterrogation: '智能审问系统',
+    intelligentInterrogationDesc: '与AI嫌疑人对话，挖掘隐藏的线索',
+    deductiveReasoning: '推理破案',
+    deductiveReasoningDesc: '分析证据，运用逻辑推理找出真凶',
+    howItWorks: '游戏流程',
+    step1: '生成案件',
+    step1Desc: '使用 new_case 命令生成随机案件',
+    step2: '收集证据',
+    step2Desc: '调查现场，审问嫌疑人，收集关键证据',
+    step3: '分析推理',
+    step3Desc: '运用逻辑思维，分析所有线索',
+    step4: '提交结论',
+    step4Desc: '确定真凶，完成案件侦破',
+    terminalPreview: '终端预览',
+    startYourJourney: '开始你的探案之旅'
+  },
+  en: {
+    gameTitle: 'CHRONOS',
+    gameSubtitle: 'Temporal Detective System',
+    heroDescription: 'Experience AI-driven mystery solving games, seek truth through temporal rifts',
+    aiCaseGeneration: 'AI Case Generation',
+    aiCaseGenerationDesc: 'Infinite random cases, every game is a new challenge',
+    intelligentInterrogation: 'Intelligent Interrogation',
+    intelligentInterrogationDesc: 'Converse with AI suspects, uncover hidden clues',
+    deductiveReasoning: 'Deductive Reasoning',
+    deductiveReasoningDesc: 'Analyze evidence, use logical reasoning to find the culprit',
+    howItWorks: 'How It Works',
+    step1: 'Generate Case',
+    step1Desc: 'Use new_case command to generate random cases',
+    step2: 'Collect Evidence',
+    step2Desc: 'Investigate scenes, interrogate suspects, gather key evidence',
+    step3: 'Analyze & Deduce',
+    step3Desc: 'Apply logical thinking, analyze all clues',
+    step4: 'Submit Conclusion',
+    step4Desc: 'Identify the culprit, solve the case',
+    terminalPreview: 'Terminal Preview',
+    startYourJourney: 'Start Your Detective Journey'
+  }
+};
