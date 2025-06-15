@@ -1,5 +1,3 @@
-
-
 import { GameState } from '../types/gameTypes';
 import { Language, t } from './i18n';
 import { generateCase, interrogateSuspect, generateCrimeScene } from './aiService';
@@ -199,6 +197,8 @@ Available Commands:
           isActive: true
         };
         
+        console.log('🎯 [NEW_CASE] Initializing case stats:', newCaseStats);
+        
         const caseData = await generateCase(gameState.apiConfig, onStreamToken, language, gameState.difficulty.level);
         
         // 更新游戏状态，包含统计数据
@@ -206,6 +206,8 @@ Available Commands:
           ...caseData,
           currentCaseStats: newCaseStats
         });
+        
+        console.log('✅ [NEW_CASE] Case initialized with stats');
         
         // 生成详细的案件信息显示 - 使用翻译
         let caseInfo = `
@@ -272,135 +274,80 @@ ${t('suspectsOverview', language)}`;
         // 生成唯一的审讯会话ID
         const interrogationSessionId = `${suspect.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         
-        // 在开发模式下显示详细调试信息
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`🎯 Starting interrogation session: ${interrogationSessionId}`);
-          console.log(`👤 Target Suspect: ${suspect.name} (ID: ${suspect.id}, Occupation: ${suspect.occupation})`);
-          console.log(`📋 Previous currentInterrogation:`, gameState.currentInterrogation);
-          console.log(`🔢 Previous interrogation count:`, gameState.currentCaseStats.interrogationCount);
-        }
+        console.log('🎯 [INTERROGATE] Starting interrogation session:', interrogationSessionId);
+        console.log('👤 [INTERROGATE] Target Suspect:', suspect.name);
+        console.log('📊 [INTERROGATE] Current stats before update:', gameState.currentCaseStats);
         
-        // 更新审问次数和当前审问状态
+        // **关键修复：创建一个新的状态对象，确保状态更新的原子性**
         const updatedStats = {
           ...gameState.currentCaseStats,
           interrogationCount: gameState.currentCaseStats.interrogationCount + 1
         };
         
-        // 先更新状态，然后获取更新后的状态
-        updateGameState({ 
-          currentInterrogation: suspect.id,
-          currentCaseStats: updatedStats
-        });
+        console.log('📊 [INTERROGATE] Updated stats to be set:', updatedStats);
         
-        // 创建更新后的 gameState 对象，确保传递给 interrogateSuspect 的是最新状态
-        const updatedGameState = {
-          ...gameState,
-          currentInterrogation: suspect.id,
-          currentCaseStats: updatedStats
-        };
-        
-        // 在开发模式下确认状态更新
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`✅ State updated - currentInterrogation:`, updatedGameState.currentInterrogation);
-          console.log(`✅ State updated - interrogation count:`, updatedGameState.currentCaseStats.interrogationCount);
-          console.log(`🔍 About to interrogate suspect with ID:`, suspect.id);
-        }
-        
-        if (onStreamToken) {
-          // 流式模式：使用 executeStreamingRequest 并设置 displayRealResult: true
-          const interrogationStartTime = Date.now();
+        // **关键修复：使用Promise来确保状态更新的同步性**
+        return new Promise((resolve) => {
+          // 先更新状态
+          updateGameState({ 
+            currentInterrogation: suspect.id,
+            currentCaseStats: updatedStats
+          });
           
-          if (process.env.NODE_ENV === 'development') {
-            console.log(`🚀 Starting streaming interrogation of ${suspect.name} at ${new Date(interrogationStartTime).toISOString()}`);
-          }
+          console.log('✅ [INTERROGATE] State update triggered');
           
-          const result = await executeStreamingRequest({
-            promptText: getInterrogationPrompt(suspect, updatedGameState, language),
-            apiConfig: gameState.apiConfig,
-            language,
-            startMessage: t('startInterrogation', language, { name: suspect.name }),
-            completeMessage: t('interrogationStarted', language, { name: suspect.name }),
-            tipMessage: t('interrogationTip', language),
-            displayRealResult: true
-          }, onStreamToken);
-          
-          const interrogationEndTime = Date.now();
-          if (process.env.NODE_ENV === 'development') {
-            console.log(`🏁 Streaming interrogation completed for ${suspect.name} at ${new Date(interrogationEndTime).toISOString()}`);
-            console.log(`⏱️ Interrogation duration: ${interrogationEndTime - interrogationStartTime}ms`);
-            console.log(`📝 Result length: ${result?.length || 0} characters`);
-            
-            // 显示完整的结果内容调试信息
-            console.log(`📄 FINAL STREAMING INTERROGATION RESULT for ${suspect.name}:`);
-            console.log(`--- BEGIN RESULT ---`);
-            console.log(result);
-            console.log(`--- END RESULT ---`);
-            
-            // 结果一致性检查
-            if (result && !result.includes(suspect.name)) {
-              console.warn(`⚠️ CONSISTENCY WARNING: Result may not match suspect ${suspect.name}`);
-            } else {
-              console.log(`✅ Result consistency check passed for ${suspect.name}`);
-            }
-            
-            // 结果质量分析
-            console.log(`🔍 RESULT ANALYSIS for ${suspect.name}:`);
-            console.log(`   - Contains suspect name: ${result?.includes(suspect.name) ? 'YES' : 'NO'}`);
-            console.log(`   - Contains suspect occupation: ${result?.includes(suspect.occupation) ? 'YES' : 'NO'}`);
-            console.log(`   - Has substantial content: ${(result?.length || 0) > 100 ? 'YES' : 'NO'}`);
-            console.log(`   - Session ID: ${interrogationSessionId}`);
-            
-            // 检查结果是否已经通过 onStreamToken 显示
-            console.log(`🖥️ UI DISPLAY STATUS:`);
-            console.log(`   - Result should be displayed via onStreamToken: YES`);
-            console.log(`   - displayRealResult was set to: true`);
-            console.log(`   - Returning empty string to avoid duplication: YES`);
-          }
-          
-          // 在流式模式下，结果已经通过 onStreamToken 显示，返回空字符串避免重复显示
-          return '';
-        } else {
-          // 非流式模式
-          const interrogationResult = await interrogateSuspect(suspect, updatedGameState, undefined, language);
-          
-          // 验证结果一致性和显示调试信息
-          if (process.env.NODE_ENV === 'development') {
-            console.log(`📋 Non-streaming result for ${suspect.name}:`, interrogationResult?.substring(0, 100) + '...');
-            console.log(`📄 FULL NON-STREAMING RESULT for ${suspect.name}:`);
-            console.log(`--- BEGIN RESULT ---`);
-            console.log(interrogationResult);
-            console.log(`--- END RESULT ---`);
-            
-            if (interrogationResult && !interrogationResult.includes(suspect.name)) {
-              console.warn(`⚠️ CONSISTENCY WARNING: Non-streaming result may not match suspect ${suspect.name}`);
-            } else {
-              console.log(`✅ Non-streaming result consistency check passed for ${suspect.name}`);
-            }
-            
-            console.log(`🖥️ UI DISPLAY STATUS:`);
-            console.log(`   - Result will be displayed via return value: YES`);
-            console.log(`   - Non-streaming mode: YES`);
-          }
-          
-          return `
+          // 使用setTimeout确保状态更新完成后再进行后续操作
+          setTimeout(async () => {
+            try {
+              // 创建包含更新后状态的gameState对象
+              const updatedGameState = {
+                ...gameState,
+                currentInterrogation: suspect.id,
+                currentCaseStats: updatedStats
+              };
+              
+              console.log('🔍 [INTERROGATE] Using updated game state for interrogation');
+              console.log('📊 [INTERROGATE] Final stats in updatedGameState:', updatedGameState.currentCaseStats);
+              
+              if (onStreamToken) {
+                console.log('🚀 [INTERROGATE] Starting streaming interrogation');
+                
+                const result = await executeStreamingRequest({
+                  promptText: getInterrogationPrompt(suspect, updatedGameState, language),
+                  apiConfig: gameState.apiConfig,
+                  language,
+                  startMessage: t('startInterrogation', language, { name: suspect.name }),
+                  completeMessage: t('interrogationStarted', language, { name: suspect.name }),
+                  tipMessage: t('interrogationTip', language),
+                  displayRealResult: true
+                }, onStreamToken);
+                
+                console.log('🏁 [INTERROGATE] Streaming interrogation completed');
+                resolve('');
+              } else {
+                console.log('📋 [INTERROGATE] Starting non-streaming interrogation');
+                
+                const interrogationResult = await interrogateSuspect(suspect, updatedGameState, undefined, language);
+                
+                console.log('🏁 [INTERROGATE] Non-streaming interrogation completed');
+                
+                resolve(`
 ${t('interrogationRecord', language, { name: suspect.name })}
 ${interrogationResult}
 
 ${t('interrogationTip', language)}
-`;
-        }
+`);
+              }
+            } catch (error) {
+              console.error('❌ [INTERROGATE] Error during interrogation:', error);
+              resolve(t('interrogationFailed', language, {
+                error: error instanceof Error ? error.message : t('unknownError', language)
+              }));
+            }
+          }, 100); // 100ms延迟确保状态更新完成
+        });
       } catch (error) {
-        // 错误处理时也要记录调试信息
-        if (process.env.NODE_ENV === 'development') {
-          console.error(`❌ Interrogation failed for suspect index ${suspectIndex}:`, error);
-          console.error(`🔍 Error details:`, {
-            suspectIndex,
-            suspectExists: !!gameState.suspects[suspectIndex],
-            errorMessage: error instanceof Error ? error.message : 'Unknown error',
-            stackTrace: error instanceof Error ? error.stack : 'No stack trace'
-          });
-        }
-        
+        console.error('❌ [INTERROGATE] Outer error:', error);
         return t('interrogationFailed', language, {
           error: error instanceof Error ? error.message : t('unknownError', language)
         });
@@ -434,17 +381,48 @@ ${t('analyzeSceneDetails', language)}
       const accusedSuspect = gameState.suspects[submitIndex];
       const isCorrect = gameState.solution.includes(accusedSuspect.name) || gameState.solution.includes(accusedSuspect.id);
       
-      // 计算完成时间
-      const completionTime = gameState.currentCaseStats.startTime ? 
-        Math.floor((Date.now() - gameState.currentCaseStats.startTime) / 1000) : 0;
+      console.log('🎯 [SUBMIT] Submitting accusation against:', accusedSuspect.name);
+      console.log('📊 [SUBMIT] Current case stats before calculation:', gameState.currentCaseStats);
       
-      // 更新错误次数（如果答错）
-      let finalStats = gameState.currentCaseStats;
+      // **关键修复：从localStorage重新获取最新状态确保数据一致性**
+      const latestState = (() => {
+        try {
+          const savedState = localStorage.getItem('ai-detective-game-state');
+          if (savedState) {
+            const parsed = JSON.parse(savedState);
+            console.log('💾 [SUBMIT] Latest state from localStorage:', parsed.currentCaseStats);
+            return parsed;
+          }
+        } catch (error) {
+          console.error('❌ [SUBMIT] Error reading from localStorage:', error);
+        }
+        return gameState;
+      })();
+      
+      // **关键修复：使用最新状态的统计数据**
+      const finalStats = {
+        ...latestState.currentCaseStats,
+        wrongGuessCount: isCorrect ? 
+          latestState.currentCaseStats.wrongGuessCount : 
+          latestState.currentCaseStats.wrongGuessCount + 1
+      };
+      
+      console.log('📊 [SUBMIT] Final stats for calculation:', finalStats);
+      
+      // 计算完成时间
+      const completionTime = finalStats.startTime ? 
+        Math.floor((Date.now() - finalStats.startTime) / 1000) : 0;
+      
+      console.log('⏱️ [SUBMIT] Calculated completion time:', completionTime, 'seconds');
+      console.log('📊 [SUBMIT] Final stats summary:', {
+        completionTime,
+        interrogationCount: finalStats.interrogationCount,
+        wrongGuessCount: finalStats.wrongGuessCount,
+        isCorrect
+      });
+      
+      // 如果答错，立即更新错误次数
       if (!isCorrect) {
-        finalStats = {
-          ...gameState.currentCaseStats,
-          wrongGuessCount: gameState.currentCaseStats.wrongGuessCount + 1
-        };
         updateGameState({ currentCaseStats: finalStats });
       }
       
@@ -456,6 +434,8 @@ ${t('analyzeSceneDetails', language)}
         finalStats.wrongGuessCount,
         isCorrect
       );
+      
+      console.log('🏆 [SUBMIT] Generated record:', record);
       
       // 更新游戏进度和重置统计数据
       const updatedProgress = {
@@ -593,4 +573,3 @@ ${apiConfig.key ? t('configuredApiKey', language) : t('unconfiguredApiKey', lang
       return t('unknownCommand', language, { cmd });
   }
 };
-

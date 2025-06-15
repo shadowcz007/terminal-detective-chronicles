@@ -58,12 +58,15 @@ const loadGameState = (): GameState => {
       if (savedConfig) {
         gameState.apiConfig = { ...DEFAULT_CONFIG, ...JSON.parse(savedConfig) };
       }
+      
+      console.log('💾 [useGameState] Loaded game state from localStorage:', gameState.currentCaseStats);
       return gameState;
     }
     
     // 如果没有完整状态，但有配置，则创建新状态但保留配置
     const apiConfig = savedConfig ? { ...DEFAULT_CONFIG, ...JSON.parse(savedConfig) } : DEFAULT_CONFIG;
     
+    console.log('🆕 [useGameState] Creating new game state');
     return {
       caseId: '',
       caseDescription: '',
@@ -78,7 +81,7 @@ const loadGameState = (): GameState => {
       currentCaseStats: DEFAULT_CASE_STATS
     };
   } catch (error) {
-    console.error('Failed to load game state from localStorage:', error);
+    console.error('❌ [useGameState] Failed to load game state from localStorage:', error);
     return {
       caseId: '',
       caseDescription: '',
@@ -98,12 +101,14 @@ const loadGameState = (): GameState => {
 // 保存完整游戏状态到本地存储
 const saveGameState = (gameState: GameState) => {
   try {
+    console.log('💾 [useGameState] Saving game state to localStorage:', gameState.currentCaseStats);
     // 保存完整游戏状态
     localStorage.setItem('ai-detective-game-state', JSON.stringify(gameState));
     // 同时单独保存API配置，保持兼容性
     localStorage.setItem('ai-detective-config', JSON.stringify(gameState.apiConfig));
+    console.log('✅ [useGameState] Game state saved successfully');
   } catch (error) {
-    console.error('Failed to save game state to localStorage:', error);
+    console.error('❌ [useGameState] Failed to save game state to localStorage:', error);
   }
 };
 
@@ -111,10 +116,18 @@ export const useGameState = () => {
   const [gameState, setGameState] = useState<GameState>(loadGameState);
 
   const updateGameState = (updates: Partial<GameState>) => {
+    console.log('🔄 [useGameState] Updating game state with:', updates);
+    
     setGameState(prev => {
       const newState = { ...prev, ...updates };
-      // 保存到本地存储
-      saveGameState(newState);
+      console.log('📊 [useGameState] New state currentCaseStats:', newState.currentCaseStats);
+      
+      // **关键修复：确保状态更新后立即保存**
+      // 使用setTimeout确保状态更新完成后再保存
+      setTimeout(() => {
+        saveGameState(newState);
+      }, 0);
+      
       return newState;
     });
   };
