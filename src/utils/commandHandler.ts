@@ -1,3 +1,4 @@
+
 import { GameState } from '../types/gameTypes';
 import { Language, t } from './i18n';
 import { generateCase, interrogateSuspect, generateCrimeScene } from './aiService';
@@ -268,27 +269,65 @@ ${t('suspectsOverview', language)}`;
         // 生成唯一的审讯会话ID
         const interrogationSessionId = `${suspect.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         
+        // 在开发模式下显示详细调试信息
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`🎯 Starting interrogation session: ${interrogationSessionId}`);
+          console.log(`👤 Target Suspect: ${suspect.name} (ID: ${suspect.id}, Occupation: ${suspect.occupation})`);
+          console.log(`📋 Previous currentInterrogation:`, gameState.currentInterrogation);
+          console.log(`🔢 Previous interrogation count:`, gameState.currentCaseStats.interrogationCount);
+        }
+        
         // 更新审问次数和当前审问状态
         const updatedStats = {
           ...gameState.currentCaseStats,
           interrogationCount: gameState.currentCaseStats.interrogationCount + 1
         };
         
-        // 在开发模式下显示调试信息
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`🎯 Starting interrogation session: ${interrogationSessionId}`);
-          console.log(`👤 Suspect: ${suspect.name} (${suspect.occupation})`);
-          console.log(`🔢 Interrogation count: ${updatedStats.interrogationCount}`);
-        }
-        
+        // 先更新状态，然后获取更新后的状态
         updateGameState({ 
           currentInterrogation: suspect.id,
           currentCaseStats: updatedStats
         });
         
+        // 创建更新后的 gameState 对象，确保传递给 interrogateSuspect 的是最新状态
+        const updatedGameState = {
+          ...gameState,
+          currentInterrogation: suspect.id,
+          currentCaseStats: updatedStats
+        };
+        
+        // 在开发模式下确认状态更新
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`✅ State updated - currentInterrogation:`, updatedGameState.currentInterrogation);
+          console.log(`✅ State updated - interrogation count:`, updatedGameState.currentCaseStats.interrogationCount);
+          console.log(`🔍 About to interrogate suspect with ID:`, suspect.id);
+        }
+        
         if (onStreamToken) {
-          // 流式模式：获取审问结果并显示
-          const interrogationResult = await interrogateSuspect(suspect, gameState, onStreamToken, language);
+          // 流式模式：添加结果一致性验证
+          const interrogationStartTime = Date.now();
+          
+          // 在开始审问前验证嫌疑人信息
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`🚀 Starting interrogation of ${suspect.name} at ${new Date(interrogationStartTime).toISOString()}`);
+          }
+          
+          const interrogationResult = await interrogateSuspect(suspect, updatedGameState, onStreamToken, language);
+          
+          // 验证结果一致性
+          const interrogationEndTime = Date.now();
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`🏁 Interrogation completed for ${suspect.name} at ${new Date(interrogationEndTime).toISOString()}`);
+            console.log(`⏱️ Interrogation duration: ${interrogationEndTime - interrogationStartTime}ms`);
+            console.log(`📝 Result length: ${interrogationResult?.length || 0} characters`);
+            
+            // 结果一致性检查
+            if (interrogationResult && !interrogationResult.includes(suspect.name)) {
+              console.warn(`⚠️ CONSISTENCY WARNING: Result may not match suspect ${suspect.name}`);
+            } else {
+              console.log(`✅ Result consistency check passed for ${suspect.name}`);
+            }
+          }
           
           // 显示审问结果
           if (interrogationResult) {
@@ -298,7 +337,16 @@ ${t('suspectsOverview', language)}`;
           return ''; // 返回空字符串，避免重复显示
         } else {
           // 非流式模式
-          const interrogationResult = await interrogateSuspect(suspect, gameState, undefined, language);
+          const interrogationResult = await interrogateSuspect(suspect, updatedGameState, undefined, language);
+          
+          // 验证结果一致性
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`📋 Non-streaming result for ${suspect.name}:`, interrogationResult?.substring(0, 100) + '...');
+            if (interrogationResult && !interrogationResult.includes(suspect.name)) {
+              console.warn(`⚠️ CONSISTENCY WARNING: Non-streaming result may not match suspect ${suspect.name}`);
+            }
+          }
+          
           return `
 ${t('interrogationRecord', language, { name: suspect.name })}
 ${interrogationResult}
@@ -307,6 +355,11 @@ ${t('interrogationTip', language)}
 `;
         }
       } catch (error) {
+        // 错误处理时也要记录调试信息
+        if (process.env.NODE_ENV === 'development') {
+          console.error(`❌ Interrogation failed for suspect index ${suspectIndex}:`, error);
+        }
+        
         return t('interrogationFailed', language, {
           error: error instanceof Error ? error.message : t('unknownError', language)
         });
