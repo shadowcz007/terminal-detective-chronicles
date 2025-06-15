@@ -5,6 +5,7 @@ import { llmRequest } from './llmClient';
 import { getCaseGenerationPrompt } from '../utils/prompts';
 import { executeStreamingRequest } from '../utils/streamingUtils';
 import { getDifficultyPromptAddition } from '../features/difficulty/difficultyConfig';
+import { generateTimestamps } from '../utils/timestampUtils';
 
 export const generateCase = async (
   config: ApiConfig, 
@@ -12,12 +13,22 @@ export const generateCase = async (
   language: Language = 'zh',
   difficulty: string = 'normal'
 ): Promise<Partial<GameState>> => {
-  const basePrompt = getCaseGenerationPrompt(language);
+  // Generate timestamp information for historical context
+  const timestampInfo = generateTimestamps();
+  
+  const basePrompt = getCaseGenerationPrompt(language, timestampInfo);
   const difficultyAddition = getDifficultyPromptAddition(difficulty, language);
   const promptText = basePrompt + difficultyAddition;
 
   // 如果有onToken回调，说明需要流式效果
   if (onToken) {
+    // Display timestamp information to user
+    const timestampDisplay = language === 'zh' ? 
+      `\n⏰ 时间背景分析中...\n当前时间: ${timestampInfo.currentFormatted}\n历史关键节点: ${timestampInfo.historicalFormatted} (${timestampInfo.yearsDifference}年前)\n历史时期: ${timestampInfo.historicalPeriod}\n` :
+      `\n⏰ Analyzing time background...\nCurrent time: ${timestampInfo.currentFormatted}\nHistorical key point: ${timestampInfo.historicalFormatted} (${timestampInfo.yearsDifference} years ago)\nHistorical period: ${timestampInfo.historicalPeriod}\n`;
+    
+    onToken(timestampDisplay);
+    
     const streamingResult = await executeStreamingRequest({
       promptText,
       apiConfig: config,
@@ -30,7 +41,7 @@ export const generateCase = async (
     const parsedResult = parseCaseResponse(streamingResult, language);
     
     // 将解析后的结果格式化显示给用户
-    const resultDisplay = formatCaseResult(parsedResult, language);
+    const resultDisplay = formatCaseResult(parsedResult, language, timestampInfo);
     onToken(`\n${resultDisplay}`);
     
     return parsedResult;
@@ -82,14 +93,17 @@ const parseCaseResponse = (response: string, language: Language): Partial<GameSt
 };
 
 // 格式化案件结果用于显示
-const formatCaseResult = (caseData: Partial<GameState>, language: Language): string => {
-  let caseInfo = `
-${t('newCaseFile', language)}
-${t('caseId', language)}: #${caseData.caseId}
-${t('overview', language)}: ${caseData.caseDescription}
-${t('victim', language)}: ${caseData.victim}
-
-${t('suspectsOverview', language)}`;
+const formatCaseResult = (caseData: Partial<GameState>, language: Language, timestampInfo?: any): string => {
+  let caseInfo = `\n${t('newCaseFile', language)}\n${t('caseId', language)}: #${caseData.caseId}\n`;
+  
+  // Add timestamp context if available
+  if (timestampInfo) {
+    caseInfo += language === 'zh' ? 
+      `📅 历史背景: ${timestampInfo.historicalFormatted} (${timestampInfo.yearsDifference}年前)\n🔍 时代特征: ${timestampInfo.historicalPeriod}\n\n` :
+      `📅 Historical Background: ${timestampInfo.historicalFormatted} (${timestampInfo.yearsDifference} years ago)\n🔍 Era Characteristics: ${timestampInfo.historicalPeriod}\n\n`;
+  }
+  
+  caseInfo += `${t('overview', language)}: ${caseData.caseDescription}\n${t('victim', language)}: ${caseData.victim}\n\n${t('suspectsOverview', language)}`;
   
   caseData.suspects?.forEach((suspect, index) => {
     caseInfo += `\n[${index + 1}] ${suspect.name} - ${suspect.occupation}`;
