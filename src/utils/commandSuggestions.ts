@@ -194,6 +194,16 @@ export const getFilteredSuggestions = (
     );
   }
   
+  // Check if input exactly matches any command
+  const exactMatch = commandSuggestions.some(cmd => 
+    cmd.command.toLowerCase() === trimmedInput
+  );
+  
+  // If exact match found, don't show suggestions
+  if (exactMatch) {
+    return [];
+  }
+  
   // Filter by input prefix
   const filtered = commandSuggestions.filter(cmd => {
     const matchesInput = cmd.command.toLowerCase().startsWith(trimmedInput);
