@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { commandSuggestions, getFilteredSuggestions, CommandSuggestion } from '../utils/commandSuggestions';
@@ -57,6 +56,7 @@ const CommandAutoComplete: React.FC<CommandAutoCompleteProps> = ({
           }
           if (filteredSuggestions[selectedIndex]) {
             onSelect(filteredSuggestions[selectedIndex].command);
+            onClose(); // 立即隐藏组件
           }
           break;
         case 'Escape':
@@ -85,6 +85,11 @@ const CommandAutoComplete: React.FC<CommandAutoCompleteProps> = ({
     investigation: language === 'zh' ? '调查' : 'Investigation',
     config: language === 'zh' ? '配置' : 'Config',
     game: language === 'zh' ? '游戏' : 'Game'
+  };
+
+  const handleCommandSelect = (command: string) => {
+    onSelect(command);
+    onClose(); // 立即隐藏组件
   };
 
   return (
@@ -131,7 +136,7 @@ const CommandAutoComplete: React.FC<CommandAutoCompleteProps> = ({
                 {commands.map((cmd) => (
                   <CommandItem
                     key={cmd.command}
-                    onSelect={() => onSelect(cmd.command)}
+                    onSelect={() => handleCommandSelect(cmd.command)}
                     className="px-4 py-3 cursor-pointer transition-all duration-200 relative data-[selected=true]:bg-transparent hover:bg-transparent"
                     style={cmd.originalIndex === selectedIndex ? {
                       background: 'rgba(34, 211, 238, 0.2)',
