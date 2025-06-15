@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -88,6 +89,8 @@
     0 0 30px rgba(59, 130, 246, 0.3),
     inset 0 0 50px rgba(16, 185, 129, 0.1);
 }
+
+/* ... keep existing code (all temporal panels, reality bleed, crystal wiring, glitch overlay styles) */
 
 /* Temporal Panels */
 .temporal-panel {
@@ -374,6 +377,19 @@
   max-height: 100%;
 }
 
+/* New optimized scrollable terminal output */
+.terminal-output-scrollable {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(34, 211, 238, 0.4);
+  border-radius: 8px;
+  backdrop-filter: blur(5px);
+  overflow: hidden;
+  /* Debug - temporary border to see the scroll area */
+  box-shadow: 
+    0 0 10px rgba(34, 211, 238, 0.3),
+    inset 0 0 10px rgba(34, 211, 238, 0.1);
+}
+
 .terminal-output [data-radix-scroll-area-viewport] {
   /* Custom scrollbar styling for the viewport */
   scrollbar-width: thin;
@@ -555,40 +571,53 @@
   transform: translateY(-2px);
 }
 
-/* Enhanced Scrollbar */
+/* Enhanced Scrollbar - Improved for better visibility */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 5px;
+  border: 1px solid rgba(34, 211, 238, 0.2);
 }
 
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #22d3ee, #10b981);
-  border-radius: 4px;
-  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: 5px;
+  border: 1px solid rgba(34, 211, 238, 0.4);
+  box-shadow: 0 0 5px rgba(34, 211, 238, 0.3);
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #0891b2, #059669);
-  box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.6);
 }
 
-/* Custom scrollbar for Radix ScrollArea */
+/* Enhanced Radix ScrollArea scrollbar styling */
 [data-radix-scroll-area-scrollbar] {
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 6px;
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  width: 12px !important;
 }
 
 [data-radix-scroll-area-thumb] {
   background: linear-gradient(180deg, #22d3ee, #10b981);
-  border-radius: 4px;
-  border: 1px solid rgba(34, 211, 238, 0.3);
+  border-radius: 5px;
+  border: 1px solid rgba(34, 211, 238, 0.4);
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.4);
+  transition: all 0.2s ease;
 }
 
 [data-radix-scroll-area-thumb]:hover {
   background: linear-gradient(180deg, #0891b2, #059669);
-  box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.7);
+  transform: scaleX(1.1);
+}
+
+/* Ensure scrollbar is visible */
+[data-radix-scroll-area-viewport] {
+  scrollbar-width: auto;
+  scrollbar-color: #22d3ee rgba(0, 0, 0, 0.6);
 }

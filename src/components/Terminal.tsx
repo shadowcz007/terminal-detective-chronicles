@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useGameState } from '../hooks/useGameState';
 import { useLanguage } from '../hooks/useLanguage';
@@ -236,7 +235,7 @@ const Terminal = () => {
       )}
 
       {/* Main Content Area - now takes full height minus fixed input */}
-      <div className="terminal-content flex-1 flex flex-col p-4 relative z-10 pb-20">
+      <div className="terminal-content flex-1 flex flex-col p-4 relative z-10 pb-20 overflow-hidden">
         {/* Language Switch in Temporal Panel */}
         <TemporalPanels timeSpeed="future">
           <div className="flex justify-between items-center mb-2">
@@ -260,50 +259,52 @@ const Terminal = () => {
           </div>
         </TemporalPanels>
         
-        {/* Main Terminal Output Area with ScrollArea */}
-        <TemporalPanels timeSpeed="present">
-          <div className="flex-1 min-h-0">
-            <ScrollArea 
-              ref={scrollAreaRef}
-              className="h-full terminal-output"
-            >
-              <div className="whitespace-pre-wrap text-sm leading-relaxed p-4">
-                {history.map((line, index) => (
-                  <div key={index} className="mb-1 terminal-line">
-                    {line}
-                  </div>
-                ))}
-                
-                {/* Current streaming response */}
-                {currentResponse && (
-                  <div className="mb-1 streaming-response">
-                    {currentResponse}
-                    {isStreaming && <span className="cursor-quantum">█</span>}
-                  </div>
-                )}
+        {/* Main Terminal Output Area with ScrollArea - Removed TemporalPanels wrapper */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <ScrollArea 
+            ref={scrollAreaRef}
+            className="terminal-output-scrollable"
+            style={{ height: 'calc(100vh - 200px)' }}
+          >
+            <div className="whitespace-pre-wrap text-sm leading-relaxed p-4">
+              {history.map((line, index) => (
+                <div key={index} className="mb-1 terminal-line">
+                  {line}
+                </div>
+              ))}
+              
+              {/* Current streaming response */}
+              {currentResponse && (
+                <div className="mb-1 streaming-response">
+                  {currentResponse}
+                  {isStreaming && <span className="cursor-quantum">█</span>}
+                </div>
+              )}
 
-                {/* Loading text */}
-                {loadingText && (
-                  <div className="mb-1 loading-line">
-                    {loadingText}
-                    <span className="cursor-quantum text-yellow-400">█</span>
+              {/* Loading text */}
+              {loadingText && (
+                <div className="mb-1 loading-line">
+                  {loadingText}
+                  <span className="cursor-quantum text-yellow-400">█</span>
+                </div>
+              )}
+              
+              {isLoading && !isStreaming && !loadingText && (
+                <div className="flex items-center loading-indicator">
+                  <span className="mr-2">{t('processing', language)}</span>
+                  <div className="flex space-x-1">
+                    <div className="quantum-dot"></div>
+                    <div className="quantum-dot" style={{animationDelay: '0.2s'}}></div>
+                    <div className="quantum-dot" style={{animationDelay: '0.4s'}}></div>
                   </div>
-                )}
-                
-                {isLoading && !isStreaming && !loadingText && (
-                  <div className="flex items-center loading-indicator">
-                    <span className="mr-2">{t('processing', language)}</span>
-                    <div className="flex space-x-1">
-                      <div className="quantum-dot"></div>
-                      <div className="quantum-dot" style={{animationDelay: '0.2s'}}></div>
-                      <div className="quantum-dot" style={{animationDelay: '0.4s'}}></div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-          </div>
-        </TemporalPanels>
+                </div>
+              )}
+              
+              {/* Add some dummy content to ensure scrolling works */}
+              <div className="h-20"></div>
+            </div>
+          </ScrollArea>
+        </div>
       </div>
 
       {/* Fixed Input Area at Bottom */}
