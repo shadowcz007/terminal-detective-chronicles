@@ -10,6 +10,7 @@ import RealityBleed from './ChronosUI/RealityBleed';
 import CrystalWiring from './ChronosUI/CrystalWiring';
 import GlitchOverlay from './ChronosUI/GlitchOverlay';
 import ParadoxMinigame from './ChronosUI/ParadoxMinigame';
+import CommandAutoComplete from './CommandAutoComplete';
 
 const Terminal = () => {
   const [input, setInput] = useState('');
@@ -22,6 +23,11 @@ const Terminal = () => {
   const [loadingText, setLoadingText] = useState('');
   const [showParadox, setShowParadox] = useState(false);
   const [glitchIntensity, setGlitchIntensity] = useState<'low' | 'medium' | 'high'>('low');
+  
+  // Auto-completion state
+  const [showAutoComplete, setShowAutoComplete] = useState(false);
+  const [autoCompleteInput, setAutoCompleteInput] = useState('');
+  
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -92,6 +98,8 @@ const Terminal = () => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
+    setShowAutoComplete(false); // Hide auto-complete when submitting
+    
     const command = input.trim();
     addToHistory(`> ${command}`);
     
@@ -163,6 +171,12 @@ const Terminal = () => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // If auto-complete is showing, let it handle navigation keys
+    if (showAutoComplete && ['ArrowUp', 'ArrowDown', 'Tab', 'Enter', 'Escape'].includes(e.key)) {
+      // Auto-complete component will handle these
+      return;
+    }
+
     if (e.key === 'ArrowUp') {
       e.preventDefault();
       if (commandHistory.length > 0) {
@@ -182,7 +196,39 @@ const Terminal = () => {
           setInput(commandHistory[newIndex]);
         }
       }
+    } else if (e.key === 'Escape') {
+      setShowAutoComplete(false);
     }
+  };
+
+  // Auto-complete logic
+  useEffect(() => {
+    const trimmedInput = input.trim();
+    const shouldShow = trimmedInput.length > 0 && 
+                      (trimmedInput === '/' || 
+                       /^[a-zA-Z]/.test(trimmedInput)) && 
+                      !isLoading;
+    
+    setShowAutoComplete(shouldShow);
+    setAutoCompleteInput(trimmedInput);
+  }, [input, isLoading]);
+
+  const handleAutoCompleteSelect = (command: string) => {
+    setInput(command + ' ');
+    setShowAutoComplete(false);
+    // Focus back to input
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
+  const handleAutoCompleteClose = () => {
+    setShowAutoComplete(false);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
+    setHistoryIndex(-1); // Reset history navigation when typing
   };
 
   // Check for paradox trigger
@@ -310,20 +356,33 @@ const Terminal = () => {
       {/* Fixed Input Area at Bottom */}
       <div className="fixed bottom-0 left-0 right-0 z-20 p-4">
         <TemporalPanels timeSpeed="present">
-          <form onSubmit={handleSubmit} className="flex temporal-input-fixed">
-            <span className="mr-2 text-cyan-300 prompt-symbol">{'>'}</span>
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="flex-1 bg-transparent border-none outline-none text-cyan-400 font-mono caret-cyan-400 terminal-input"
-              disabled={isLoading}
-              autoFocus
+          <div className="relative">
+            {/* Auto-complete component */}
+            <CommandAutoComplete
+              input={autoCompleteInput}
+              onSelect={handleAutoCompleteSelect}
+              onClose={handleAutoCompleteClose}
+              isVisible={showAutoComplete}
+              hasActiveCase={!!gameState.caseId}
+              language={language}
             />
-            <span className="cursor-quantum text-cyan-300">█</span>
-          </form>
+            
+            <form onSubmit={handleSubmit} className="flex temporal-input-fixed">
+              <span className="mr-2 text-cyan-300 prompt-symbol">{'>'}</span>
+              <input
+                ref={inputRef}
+                type="text"
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                className="flex-1 bg-transparent border-none outline-none text-cyan-400 font-mono caret-cyan-400 terminal-input"
+                disabled={isLoading}
+                autoFocus
+                placeholder={language === 'zh' ? '输入命令或按 / 查看所有命令...' : 'Type command or press / to see all commands...'}
+              />
+              <span className="cursor-quantum text-cyan-300">█</span>
+            </form>
+          </div>
         </TemporalPanels>
       </div>
     </div>
