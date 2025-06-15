@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useGameState } from '../hooks/useGameState';
 import { useLanguage } from '../hooks/useLanguage';
 import { executeCommand } from '../utils/commandHandler';
@@ -81,12 +81,13 @@ const Terminal = () => {
     }
   }, [history, currentResponse]);
 
-  const addToHistory = (text: string) => {
+  const addToHistory = useCallback((text: string) => {
     console.log(`📝 Adding to history: ${text.substring(0, 100)}...`);
     setHistory(prev => [...prev, text]);
-  };
+  }, []);
 
-  const handleStreamToken = (token: string) => {
+  // **修复关键问题：使用 useCallback 确保 handleStreamToken 在每次命令执行时都是最新的**
+  const handleStreamToken = useCallback((token: string) => {
     if (token.startsWith('\r')) {
       // 处理单行更新（回车符开头）
       setLoadingText(token.slice(1));
@@ -95,11 +96,11 @@ const Terminal = () => {
       console.log(`🔄 Streaming token received: ${token.substring(0, 50)}...`);
       setCurrentResponse(prev => {
         const newResponse = prev + token;
-        console.log(`📊 Current response length: ${newResponse.length}`);
+        console.log(`📊 Current response length: ${newResponse.length}, previous length: ${prev.length}`);
         return newResponse;
       });
     }
-  };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,26 +119,29 @@ const Terminal = () => {
     setInput('');
     setHistoryIndex(-1); // 重置历史索引
     
-    // **关键修复：在开始新的命令前，先保存当前的响应到历史记录**
+    // **关键修复1：在开始新的命令前，强制保存并清空当前响应**
     if (currentResponse.trim()) {
-      console.log(`💾 Saving previous response to history before new command: ${currentResponse.substring(0, 100)}...`);
+      console.log(`💾 [BEFORE NEW COMMAND] Saving previous response to history: ${currentResponse.substring(0, 100)}...`);
       addToHistory(currentResponse);
-      setCurrentResponse(''); // 清空当前响应
     }
     
+    // **关键修复2：强制重置所有流式状态**
+    console.log(`🧹 [STATE RESET] Clearing all streaming states for new command: ${command}`);
+    setCurrentResponse(''); // 强制清空当前响应
     setIsLoading(true);
-    setLoadingText('');
+    setIsStreaming(false); // 重置流式状态
+    setLoadingText(''); // 清空加载文本
 
     // 检查是否是需要流式响应的命令
     const streamingCommands = ['new_case', 'interrogate', 'recreate'];
     const shouldStream = streamingCommands.some(cmd => command.toLowerCase().startsWith(cmd));
 
-    console.log(`🚀 Executing command: ${command}, shouldStream: ${shouldStream}`);
+    console.log(`🚀 [COMMAND START] Executing command: ${command}, shouldStream: ${shouldStream}, currentResponse cleared: ${currentResponse === ''}`);
 
     try {
       if (shouldStream && gameState.apiConfig.key) {
         setIsStreaming(true);
-        console.log(`🌊 Starting streaming command: ${command}`);
+        console.log(`🌊 [STREAMING START] Starting streaming command: ${command}`);
         
         const result = await executeCommand(
           command, 
@@ -148,21 +152,23 @@ const Terminal = () => {
           language // 传递语言参数
         );
         
-        console.log(`✅ Streaming command completed. Result: ${result ? result.substring(0, 100) + '...' : 'empty'}`);
+        console.log(`✅ [STREAMING COMPLETE] Command completed. Result: ${result ? result.substring(0, 100) + '...' : 'empty'}`);
         
-        // **关键修复：流式响应完成后，立即将当前响应添加到历史记录**
-        if (currentResponse.trim()) {
-          console.log(`💾 Adding streaming response to history: ${currentResponse.substring(0, 100)}...`);
-          addToHistory(currentResponse);
-          setCurrentResponse(''); // 清空当前响应
-        }
+        // **关键修复3：流式响应完成后，立即将当前响应添加到历史记录**
+        setCurrentResponse(prev => {
+          if (prev.trim()) {
+            console.log(`💾 [STREAMING SAVE] Adding streaming response to history: ${prev.substring(0, 100)}...`);
+            addToHistory(prev);
+          }
+          return ''; // 立即清空
+        });
         
         // 清空loading文本
         setLoadingText('');
         
         // 如果还有额外的结果信息，也添加到历史记录
         if (result && result.trim()) {
-          console.log(`📋 Adding additional result to history: ${result.substring(0, 100)}...`);
+          console.log(`📋 [ADDITIONAL RESULT] Adding extra result to history: ${result.substring(0, 100)}...`);
           addToHistory(result);
         }
 
@@ -172,7 +178,7 @@ const Terminal = () => {
         }
       } else {
         // 非流式命令或未配置API密钥
-        console.log(`🔄 Executing non-streaming command: ${command}`);
+        console.log(`🔄 [NON-STREAMING] Executing non-streaming command: ${command}`);
         const result = await executeCommand(command, gameState, updateGameState, updateApiConfig, undefined, language);
         
         if (result && result.trim()) {
@@ -185,7 +191,7 @@ const Terminal = () => {
         }
       }
     } catch (error) {
-      console.error(`❌ Command execution failed: ${error}`);
+      console.error(`❌ [COMMAND ERROR] Command execution failed: ${error}`);
       const errorMsg = language === 'zh' ? 
         `ERROR: ${error instanceof Error ? error.message : '未知错误'}` :
         `ERROR: ${error instanceof Error ? error.message : 'Unknown error'}`;
@@ -195,6 +201,7 @@ const Terminal = () => {
     setIsLoading(false);
     setIsStreaming(false);
     setLoadingText('');
+    console.log(`🏁 [COMMAND END] Command execution finished for: ${command}`);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
