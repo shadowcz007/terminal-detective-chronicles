@@ -27,6 +27,7 @@ const Terminal = () => {
   // Auto-completion state
   const [showAutoComplete, setShowAutoComplete] = useState(false);
   const [autoCompleteInput, setAutoCompleteInput] = useState('');
+  const [justSelected, setJustSelected] = useState(false);
   
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -201,21 +202,30 @@ const Terminal = () => {
     }
   };
 
-  // Auto-complete logic
+  // Modified auto-complete logic to prevent showing after selection
   useEffect(() => {
     const trimmedInput = input.trim();
-    const shouldShow = trimmedInput.length > 0 && 
+    const shouldShow = !justSelected && 
+                      trimmedInput.length > 0 && 
                       (trimmedInput === '/' || 
                        /^[a-zA-Z]/.test(trimmedInput)) && 
-                      !isLoading;
+                      !isLoading &&
+                      !trimmedInput.endsWith(' '); // Don't show if input ends with space (complete command)
     
     setShowAutoComplete(shouldShow);
     setAutoCompleteInput(trimmedInput);
-  }, [input, isLoading]);
+  }, [input, isLoading, justSelected]);
 
   const handleAutoCompleteSelect = (command: string) => {
     setInput(command + ' ');
     setShowAutoComplete(false);
+    setJustSelected(true);
+    
+    // Reset justSelected after a short delay
+    setTimeout(() => {
+      setJustSelected(false);
+    }, 100);
+    
     // Focus back to input
     if (inputRef.current) {
       inputRef.current.focus();
@@ -229,6 +239,11 @@ const Terminal = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value);
     setHistoryIndex(-1); // Reset history navigation when typing
+    
+    // Reset justSelected when user starts typing again
+    if (justSelected) {
+      setJustSelected(false);
+    }
   };
 
   // Check for paradox trigger
