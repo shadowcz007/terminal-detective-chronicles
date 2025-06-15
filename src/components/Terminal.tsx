@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useGameState } from '../hooks/useGameState';
 import { useLanguage } from '../hooks/useLanguage';
@@ -234,7 +235,8 @@ const Terminal = () => {
         />
       )}
 
-      <div className="terminal-content h-full flex flex-col p-4 relative z-10">
+      {/* Main Content Area - now takes full height minus fixed input */}
+      <div className="terminal-content flex-1 flex flex-col p-4 relative z-10 pb-20">
         {/* Language Switch in Temporal Panel */}
         <TemporalPanels timeSpeed="future">
           <div className="flex justify-between items-center mb-2">
@@ -258,9 +260,9 @@ const Terminal = () => {
           </div>
         </TemporalPanels>
         
-        {/* Main Terminal Area with ScrollArea */}
+        {/* Main Terminal Output Area with ScrollArea */}
         <TemporalPanels timeSpeed="present">
-          <div className="flex-1 mb-4 min-h-0">
+          <div className="flex-1 min-h-0">
             <ScrollArea 
               ref={scrollAreaRef}
               className="h-full terminal-output"
@@ -302,10 +304,12 @@ const Terminal = () => {
             </ScrollArea>
           </div>
         </TemporalPanels>
-        
-        {/* Input Area */}
+      </div>
+
+      {/* Fixed Input Area at Bottom */}
+      <div className="fixed bottom-0 left-0 right-0 z-20 p-4">
         <TemporalPanels timeSpeed="present">
-          <form onSubmit={handleSubmit} className="flex temporal-input">
+          <form onSubmit={handleSubmit} className="flex temporal-input-fixed">
             <span className="mr-2 text-cyan-300 prompt-symbol">{'>'}</span>
             <input
               ref={inputRef}
