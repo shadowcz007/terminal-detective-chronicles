@@ -10,7 +10,15 @@ export const interrogateSuspect = async (
   onToken?: (token: string) => void,
   language: Language = 'zh'
 ): Promise<string> => {
+  // 生成唯一的prompt，包含时间戳和随机元素
   const promptText = getInterrogationPrompt(suspect, gameState, language);
+  
+  // 在开发模式下输出调试信息
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`🔍 Interrogating suspect: ${suspect.name} (ID: ${suspect.id})`);
+    console.log(`📝 Prompt length: ${promptText.length} characters`);
+    console.log(`🎯 Prompt preview:`, promptText.substring(0, 200) + '...');
+  }
   
   // 如果有onToken回调，说明需要流式效果
   if (onToken) {
@@ -25,6 +33,13 @@ export const interrogateSuspect = async (
   } else {
     // 非流式模式，使用实际的API请求
     const { realLLMRequest } = await import('./llmClient');
-    return await realLLMRequest(promptText, gameState.apiConfig);
+    const result = await realLLMRequest(promptText, gameState.apiConfig);
+    
+    // 调试信息
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`✅ Interrogation result for ${suspect.name}:`, result.substring(0, 100) + '...');
+    }
+    
+    return result;
   }
 };

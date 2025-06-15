@@ -265,11 +265,21 @@ ${t('suspectsOverview', language)}`;
       try {
         const suspect = gameState.suspects[suspectIndex];
         
+        // 生成唯一的审讯会话ID
+        const interrogationSessionId = `${suspect.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
         // 更新审问次数和当前审问状态
         const updatedStats = {
           ...gameState.currentCaseStats,
           interrogationCount: gameState.currentCaseStats.interrogationCount + 1
         };
+        
+        // 在开发模式下显示调试信息
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`🎯 Starting interrogation session: ${interrogationSessionId}`);
+          console.log(`👤 Suspect: ${suspect.name} (${suspect.occupation})`);
+          console.log(`🔢 Interrogation count: ${updatedStats.interrogationCount}`);
+        }
         
         updateGameState({ 
           currentInterrogation: suspect.id,
@@ -288,7 +298,7 @@ ${t('suspectsOverview', language)}`;
           return ''; // 返回空字符串，避免重复显示
         } else {
           // 非流式模式
-          const interrogationResult = await interrogateSuspect(suspect, gameState);
+          const interrogationResult = await interrogateSuspect(suspect, gameState, undefined, language);
           return `
 ${t('interrogationRecord', language, { name: suspect.name })}
 ${interrogationResult}
