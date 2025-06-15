@@ -1,10 +1,10 @@
-
 import { GameState } from '../types/gameTypes';
 import { Language, t } from './i18n';
 import { generateCase, interrogateSuspect, generateCrimeScene } from './aiService';
 import { handleDifficultyCommands } from '../commands/difficultyCommands';
 import { handleProgressCommands } from '../commands/progressCommands';
 import { ProgressManager } from '../features/progress/progressManager';
+import { formatCaseAsMarkdown, downloadMarkdownFile } from './exportUtils';
 
 // 游戏状态跟踪（用于记录开始时间等）
 let gameStartTime: number | null = null;
@@ -32,6 +32,27 @@ export const executeCommand = async (
   if (progressResult) return progressResult;
 
   switch (cmd) {
+    case 'export_case':
+      if (!gameState.caseId) {
+        return t('noActiveCase', language);
+      }
+      
+      try {
+        const markdownContent = formatCaseAsMarkdown(gameState, language);
+        const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const filename = `case_${gameState.caseId}_${timestamp}.md`;
+        
+        downloadMarkdownFile(markdownContent, filename);
+        
+        return language === 'zh' ? 
+          `📄 案件档案已导出为 ${filename}\n🔽 文件已自动下载到您的下载文件夹` :
+          `📄 Case file exported as ${filename}\n🔽 File automatically downloaded to your downloads folder`;
+      } catch (error) {
+        return language === 'zh' ?
+          `❌ 导出失败: ${error instanceof Error ? error.message : '未知错误'}` :
+          `❌ Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      }
+
     case 'help':
       return language === 'zh' ? `
 可用命令：
@@ -41,6 +62,7 @@ export const executeCommand = async (
   evidence       - 查看证据档案
   recreate       - 生成犯罪现场重现
   submit [嫌疑人ID] - 提交最终结论
+  export_case    - 导出案件信息为MD文档
   status         - 查看当前案件状态
   clear_case     - 清除当前案件数据
   difficulty     - 查看/设置游戏难度
@@ -60,6 +82,7 @@ Available Commands:
   evidence       - View evidence files
   recreate       - Generate crime scene recreation
   submit [Suspect ID] - Submit final conclusion
+  export_case    - Export case information as MD document
   status         - Check current case status
   clear_case     - Clear current case data
   difficulty     - View/set game difficulty

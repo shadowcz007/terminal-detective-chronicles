@@ -101,6 +101,16 @@ export const commandSuggestions: CommandSuggestion[] = [
     requiresCase: true
   },
   {
+    command: 'export_case',
+    description: {
+      zh: '导出当前案件的所有信息为MD文档',
+      en: 'Export current case information as MD document'
+    },
+    example: 'export_case',
+    category: 'investigation',
+    requiresCase: true
+  },
+  {
     command: 'clear_case',
     description: {
       zh: '清除当前案件数据',
