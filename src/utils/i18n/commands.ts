@@ -11,6 +11,7 @@ export const commandTranslations = {
   recreate       - 生成犯罪现场重现
   submit [嫌疑人ID] - 提交最终结论
   status         - 查看当前案件状态
+  current_stats  - 查看当前案件统计
   clear_case     - 清除当前案件数据
   config         - 查看/修改API设置
   lang           - 切换语言 (中/英文)
@@ -51,6 +52,7 @@ Available Commands:
   recreate       - Generate crime scene recreation
   submit [Suspect ID] - Submit final conclusion
   status         - Check current case status
+  current_stats  - View current case statistics
   clear_case     - Clear current case data
   config         - View/modify API settings
   lang           - Switch language (Chinese/English)

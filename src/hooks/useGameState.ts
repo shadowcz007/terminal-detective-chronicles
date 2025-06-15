@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from 'react';
-import { GameState, ApiConfig, GameProgress, DifficultyLevel } from '../types/gameTypes';
+import { GameState, ApiConfig, GameProgress, DifficultyLevel, CurrentCaseStats } from '../types/gameTypes';
 import { DIFFICULTY_LEVELS } from '../features/difficulty/difficultyConfig';
 
 const DEFAULT_CONFIG: ApiConfig = {
@@ -26,6 +27,13 @@ const DEFAULT_PROGRESS: GameProgress = {
   }
 };
 
+const DEFAULT_CASE_STATS: CurrentCaseStats = {
+  startTime: null,
+  interrogationCount: 0,
+  wrongGuessCount: 0,
+  isActive: false
+};
+
 // 从本地存储加载完整游戏状态
 const loadGameState = (): GameState => {
   try {
@@ -41,6 +49,9 @@ const loadGameState = (): GameState => {
       }
       if (!gameState.gameProgress) {
         gameState.gameProgress = DEFAULT_PROGRESS;
+      }
+      if (!gameState.currentCaseStats) {
+        gameState.currentCaseStats = DEFAULT_CASE_STATS;
       }
       
       // 如果有单独保存的配置，优先使用
@@ -63,7 +74,8 @@ const loadGameState = (): GameState => {
       apiConfig,
       currentInterrogation: undefined,
       difficulty: DIFFICULTY_LEVELS.normal,
-      gameProgress: DEFAULT_PROGRESS
+      gameProgress: DEFAULT_PROGRESS,
+      currentCaseStats: DEFAULT_CASE_STATS
     };
   } catch (error) {
     console.error('Failed to load game state from localStorage:', error);
@@ -77,7 +89,8 @@ const loadGameState = (): GameState => {
       apiConfig: DEFAULT_CONFIG,
       currentInterrogation: undefined,
       difficulty: DIFFICULTY_LEVELS.normal,
-      gameProgress: DEFAULT_PROGRESS
+      gameProgress: DEFAULT_PROGRESS,
+      currentCaseStats: DEFAULT_CASE_STATS
     };
   }
 };
@@ -123,7 +136,8 @@ export const useGameState = () => {
       apiConfig: gameState.apiConfig, // 保留API配置
       currentInterrogation: undefined,
       difficulty: gameState.difficulty, // 保留难度设置
-      gameProgress: gameState.gameProgress // 保留游戏进度
+      gameProgress: gameState.gameProgress, // 保留游戏进度
+      currentCaseStats: DEFAULT_CASE_STATS // 重置统计数据
     };
     updateGameState(clearedState);
   };

@@ -1,4 +1,3 @@
-
 export interface Suspect {
   id: string;
   name: string;
@@ -21,6 +20,13 @@ export interface ApiConfig {
   model: string;
 }
 
+export interface CurrentCaseStats {
+  startTime: number | null;
+  interrogationCount: number;
+  wrongGuessCount: number;
+  isActive: boolean;
+}
+
 export interface GameState {
   caseId: string;
   caseDescription: string;
@@ -33,6 +39,8 @@ export interface GameState {
   // 新增的难度和进度相关字段
   difficulty: DifficultyLevel;
   gameProgress: GameProgress;
+  // 新增的当前案件统计字段
+  currentCaseStats: CurrentCaseStats;
 }
 
 export interface DifficultyLevel {
