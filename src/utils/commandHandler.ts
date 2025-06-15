@@ -189,25 +189,50 @@ Available Commands:
 
     case 'new_case':
       try {
-        // 初始化案件统计数据
+        // **关键修复：确保 startTime 正确记录**
+        const currentTime = Date.now();
         const newCaseStats = {
-          startTime: Date.now(),
+          startTime: currentTime,
           interrogationCount: 0,
           wrongGuessCount: 0,
           isActive: true
         };
         
-        console.log('🎯 [NEW_CASE] Initializing case stats:', newCaseStats);
+        console.log('🎯 [NEW_CASE] Initializing case stats with startTime:', currentTime);
+        console.log('📊 [NEW_CASE] Full stats object:', newCaseStats);
         
         const caseData = await generateCase(gameState.apiConfig, onStreamToken, language, gameState.difficulty.level);
         
-        // 更新游戏状态，包含统计数据
-        updateGameState({
+        // **关键修复：先更新状态，然后验证保存**
+        const stateUpdate = {
           ...caseData,
           currentCaseStats: newCaseStats
+        };
+        
+        console.log('🔄 [NEW_CASE] Updating state with:', {
+          caseId: stateUpdate.caseId,
+          startTime: stateUpdate.currentCaseStats.startTime,
+          isActive: stateUpdate.currentCaseStats.isActive
         });
         
-        console.log('✅ [NEW_CASE] Case initialized with stats');
+        updateGameState(stateUpdate);
+        
+        // **验证状态保存**
+        setTimeout(() => {
+          try {
+            const savedState = localStorage.getItem('ai-detective-game-state');
+            if (savedState) {
+              const parsed = JSON.parse(savedState);
+              console.log('🔍 [NEW_CASE] Verification - saved startTime:', parsed.currentCaseStats?.startTime);
+              console.log('🔍 [NEW_CASE] Verification - should be:', currentTime);
+              console.log('🔍 [NEW_CASE] Verification - match:', parsed.currentCaseStats?.startTime === currentTime);
+            }
+          } catch (error) {
+            console.error('❌ [NEW_CASE] Verification failed:', error);
+          }
+        }, 100);
+        
+        console.log('✅ [NEW_CASE] Case initialized with verified stats');
         
         // 生成详细的案件信息显示 - 使用翻译
         let caseInfo = `
@@ -382,39 +407,65 @@ ${t('analyzeSceneDetails', language)}
       const isCorrect = gameState.solution.includes(accusedSuspect.name) || gameState.solution.includes(accusedSuspect.id);
       
       console.log('🎯 [SUBMIT] Submitting accusation against:', accusedSuspect.name);
-      console.log('📊 [SUBMIT] Current case stats before calculation:', gameState.currentCaseStats);
       
-      // **关键修复：从localStorage重新获取最新状态确保数据一致性**
-      const latestState = (() => {
+      // **关键修复：直接从 localStorage 读取最新状态**
+      const getLatestStateFromCache = () => {
         try {
           const savedState = localStorage.getItem('ai-detective-game-state');
           if (savedState) {
             const parsed = JSON.parse(savedState);
-            console.log('💾 [SUBMIT] Latest state from localStorage:', parsed.currentCaseStats);
+            console.log('💾 [SUBMIT] Reading from localStorage:', {
+              startTime: parsed.currentCaseStats?.startTime,
+              interrogationCount: parsed.currentCaseStats?.interrogationCount,
+              wrongGuessCount: parsed.currentCaseStats?.wrongGuessCount,
+              isActive: parsed.currentCaseStats?.isActive
+            });
             return parsed;
           }
         } catch (error) {
           console.error('❌ [SUBMIT] Error reading from localStorage:', error);
         }
+        console.warn('⚠️ [SUBMIT] Fallback to gameState:', gameState.currentCaseStats);
         return gameState;
-      })();
-      
-      // **关键修复：使用最新状态的统计数据**
-      const finalStats = {
-        ...latestState.currentCaseStats,
-        wrongGuessCount: isCorrect ? 
-          latestState.currentCaseStats.wrongGuessCount : 
-          latestState.currentCaseStats.wrongGuessCount + 1
       };
       
-      console.log('📊 [SUBMIT] Final stats for calculation:', finalStats);
+      const latestState = getLatestStateFromCache();
+      const currentStats = latestState.currentCaseStats;
       
-      // 计算完成时间
-      const completionTime = finalStats.startTime ? 
-        Math.floor((Date.now() - finalStats.startTime) / 1000) : 0;
+      console.log('📊 [SUBMIT] Current stats from cache:', {
+        startTime: currentStats.startTime,
+        interrogationCount: currentStats.interrogationCount,
+        wrongGuessCount: currentStats.wrongGuessCount,
+        startTimeType: typeof currentStats.startTime
+      });
       
-      console.log('⏱️ [SUBMIT] Calculated completion time:', completionTime, 'seconds');
-      console.log('📊 [SUBMIT] Final stats summary:', {
+      // **关键修复：验证 startTime 有效性**
+      if (!currentStats.startTime) {
+        console.error('❌ [SUBMIT] startTime is null/undefined, cannot calculate completion time');
+        return language === 'zh' ? 
+          '❌ 错误：无法获取案件开始时间，请重新开始新案件' :
+          '❌ Error: Cannot get case start time, please start a new case';
+      }
+      
+      // **修复错误计数逻辑**
+      const finalStats = {
+        ...currentStats,
+        wrongGuessCount: isCorrect ? 
+          currentStats.wrongGuessCount : 
+          currentStats.wrongGuessCount + 1
+      };
+      
+      // **修复时间计算**
+      const completionTime = Math.floor((Date.now() - currentStats.startTime) / 1000);
+      
+      console.log('⏱️ [SUBMIT] Time calculation:', {
+        currentTime: Date.now(),
+        startTime: currentStats.startTime,
+        difference: Date.now() - currentStats.startTime,
+        completionTimeSeconds: completionTime
+      });
+      
+      console.log('📊 [SUBMIT] Final stats for record:', {
         completionTime,
         interrogationCount: finalStats.interrogationCount,
         wrongGuessCount: finalStats.wrongGuessCount,

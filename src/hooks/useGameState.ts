@@ -59,7 +59,12 @@ const loadGameState = (): GameState => {
         gameState.apiConfig = { ...DEFAULT_CONFIG, ...JSON.parse(savedConfig) };
       }
       
-      console.log('💾 [useGameState] Loaded game state from localStorage:', gameState.currentCaseStats);
+      console.log('💾 [useGameState] Loaded game state from localStorage:', {
+        startTime: gameState.currentCaseStats.startTime,
+        interrogationCount: gameState.currentCaseStats.interrogationCount,
+        wrongGuessCount: gameState.currentCaseStats.wrongGuessCount,
+        isActive: gameState.currentCaseStats.isActive
+      });
       return gameState;
     }
     
@@ -98,17 +103,30 @@ const loadGameState = (): GameState => {
   }
 };
 
-// 保存完整游戏状态到本地存储
+// **关键修复：同步保存完整游戏状态到本地存储**
 const saveGameState = (gameState: GameState) => {
   try {
-    console.log('💾 [useGameState] Saving game state to localStorage:', gameState.currentCaseStats);
+    console.log('💾 [useGameState] Saving game state to localStorage:', {
+      startTime: gameState.currentCaseStats.startTime,
+      interrogationCount: gameState.currentCaseStats.interrogationCount,
+      wrongGuessCount: gameState.currentCaseStats.wrongGuessCount,
+      isActive: gameState.currentCaseStats.isActive
+    });
+    
     // 保存完整游戏状态
     localStorage.setItem('ai-detective-game-state', JSON.stringify(gameState));
     // 同时单独保存API配置，保持兼容性
     localStorage.setItem('ai-detective-config', JSON.stringify(gameState.apiConfig));
-    console.log('✅ [useGameState] Game state saved successfully');
+    
+    // **验证保存结果**
+    const verification = localStorage.getItem('ai-detective-game-state');
+    const parsed = verification ? JSON.parse(verification) : null;
+    console.log('✅ [useGameState] Save verification - startTime:', parsed?.currentCaseStats?.startTime);
+    
+    return true;
   } catch (error) {
     console.error('❌ [useGameState] Failed to save game state to localStorage:', error);
+    return false;
   }
 };
 
@@ -116,17 +134,24 @@ export const useGameState = () => {
   const [gameState, setGameState] = useState<GameState>(loadGameState);
 
   const updateGameState = (updates: Partial<GameState>) => {
-    console.log('🔄 [useGameState] Updating game state with:', updates);
+    console.log('🔄 [useGameState] Updating game state with:', {
+      hasStartTime: updates.currentCaseStats?.startTime ? 'YES' : 'NO',
+      startTime: updates.currentCaseStats?.startTime,
+      updates: Object.keys(updates)
+    });
     
     setGameState(prev => {
       const newState = { ...prev, ...updates };
-      console.log('📊 [useGameState] New state currentCaseStats:', newState.currentCaseStats);
+      console.log('📊 [useGameState] New state currentCaseStats:', {
+        startTime: newState.currentCaseStats.startTime,
+        interrogationCount: newState.currentCaseStats.interrogationCount,
+        wrongGuessCount: newState.currentCaseStats.wrongGuessCount,
+        isActive: newState.currentCaseStats.isActive
+      });
       
-      // **关键修复：确保状态更新后立即保存**
-      // 使用setTimeout确保状态更新完成后再保存
-      setTimeout(() => {
-        saveGameState(newState);
-      }, 0);
+      // **关键修复：立即同步保存状态，不使用 setTimeout**
+      const saveSuccess = saveGameState(newState);
+      console.log('💾 [useGameState] Immediate save result:', saveSuccess);
       
       return newState;
     });
