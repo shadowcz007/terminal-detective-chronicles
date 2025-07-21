@@ -69,7 +69,7 @@ const Terminal = () => {
       });
       setHistory(prev => [...prev, caseInfo]);
     }
-  }, [language, gameState.caseId, gameState.caseDescription, gameState.victim, gameState.suspects?.length || 0, gameState.evidence?.length || 0, gameState.apiConfig.key]);
+  }, [language, gameState.caseId, gameState.caseDescription, gameState.victim, gameState.suspects, gameState.evidence, gameState.apiConfig.key]);
 
   // Auto-scroll to bottom when history updates
   useEffect(() => {

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
 import { t } from '../utils/i18n';
 
@@ -9,7 +9,7 @@ const AnimatedTerminal = () => {
   const [currentChar, setCurrentChar] = useState(0);
   const [showCursor, setShowCursor] = useState(true);
 
-  const terminalLines = [
+  const terminalLines = useMemo(() => [
     '> new_case',
     '🔍 Generating new case...',
     '📋 Case: The Vanishing Scientist',
@@ -19,7 +19,7 @@ const AnimatedTerminal = () => {
     '🧪 DNA traces found on the door handle',
     '> submit suspect_1',
     '🎯 Case solved! The truth revealed.'
-  ];
+  ], []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -42,7 +42,7 @@ const AnimatedTerminal = () => {
     }, 80);
 
     return () => clearInterval(timer);
-  }, [currentLine, currentChar, terminalLines.length]);
+  }, [currentLine, currentChar, terminalLines]);
 
   useEffect(() => {
     const cursorTimer = setInterval(() => {

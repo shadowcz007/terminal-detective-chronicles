@@ -130,7 +130,15 @@ const parseCaseResponse = (response: string, language: Language): Partial<GameSt
 };
 
 // **增强案件结果格式化，展现随机性特征**
-const formatCaseResult = (caseData: Partial<GameState>, language: Language, timestampInfo?: any): string => {
+const formatCaseResult = (caseData: Partial<GameState>, language: Language, timestampInfo?: {
+  randomSeed: number;
+  timeVariant: string;
+  historicalFormatted: string;
+  yearsDifference: number;
+  historicalPeriod: string;
+  seasonalContext: string;
+  historicalContext: Array<{ year: number; event: string }>;
+}): string => {
   let caseInfo = `\n${t('newCaseFile', language)}\n${t('caseId', language)}: #${caseData.caseId}\n`;
   
   // **展现时间戳随机性信息**

@@ -29,7 +29,7 @@ export const executeCommand = async (
   if (progressResult) return progressResult;
 
   switch (cmd) {
-    case 'export_case':
+    case 'export_case': {
       if (!gameState.caseId) {
         return t('noActiveCase', language);
       }
@@ -49,8 +49,9 @@ export const executeCommand = async (
           `❌ 导出失败: ${error instanceof Error ? error.message : '未知错误'}` :
           `❌ Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
       }
+    }
 
-    case 'current_stats':
+    case 'current_stats': {
       if (!gameState.currentCaseStats.isActive) {
         return language === 'zh' ? 
           '当前没有活跃案件，无法显示统计数据' :
@@ -78,8 +79,9 @@ export const executeCommand = async (
    Wrong Guesses: ${gameState.currentCaseStats.wrongGuessCount}
    Case ID: #${gameState.caseId}
 `;
+    }
 
-    case 'help':
+    case 'help': {
       return language === 'zh' ? `
 可用命令：
   new_case       - 生成新案件
@@ -123,8 +125,9 @@ Available Commands:
   clear          - Clear terminal
   exit           - Exit system
 `;
+    }
 
-    case 'status':
+    case 'status': {
       if (!gameState.caseId) {
         return t('noActiveCase', language);
       }
@@ -162,8 +165,9 @@ Available Commands:
    Wrong Guesses: ${gameState.currentCaseStats.wrongGuessCount}`;
       
       return statusText + statsText;
+    }
 
-    case 'clear_case':
+    case 'clear_case': {
       if (!gameState.caseId) {
         return t('noCurrentCase', language);
       }
@@ -186,8 +190,9 @@ Available Commands:
       });
       
       return t('caseCleared', language);
+    }
 
-    case 'new_case':
+    case 'new_case': {
       try {
         // **关键修复：确保 startTime 正确记录**
         const currentTime = Date.now();
@@ -260,8 +265,9 @@ ${t('suspectsOverview', language)}`;
           error: error instanceof Error ? error.message : t('unknownError', language)
         });
       }
+    }
 
-    case 'list_suspects':
+    case 'list_suspects': {
       if (gameState.suspects.length === 0) {
         return t('noActiveCase', language);
       }
@@ -273,8 +279,9 @@ ${t('suspectsOverview', language)}`;
         suspectList += `    ${t('apparentMotive', language)}: ${suspect.motive.substring(0, 30)}...\n\n`;
       });
       return suspectList;
+    }
 
-    case 'evidence':
+    case 'evidence': {
       if (gameState.evidence.length === 0) {
         return t('noActiveCase', language);
       }
@@ -286,8 +293,9 @@ ${t('suspectsOverview', language)}`;
         evidenceList += `    ${t('description', language)}: ${evidence.description}\n\n`;
       });
       return evidenceList;
+    }
 
-    case 'interrogate':
+    case 'interrogate': {
       const suspectIndex = parseInt(args[0]) - 1;
       if (isNaN(suspectIndex) || !gameState.suspects[suspectIndex]) {
         return t('validSuspectId', language);
@@ -377,8 +385,9 @@ ${t('interrogationTip', language)}
           error: error instanceof Error ? error.message : t('unknownError', language)
         });
       }
+    }
 
-    case 'recreate':
+    case 'recreate': {
       if (!gameState.caseDescription) {
         return t('generateCaseFirst', language);
       }
@@ -396,8 +405,9 @@ ${t('analyzeSceneDetails', language)}
           error: error instanceof Error ? error.message : t('unknownError', language)
         });
       }
+    }
 
-    case 'submit':
+    case 'submit': {
       const submitIndex = parseInt(args[0]) - 1;
       if (isNaN(submitIndex) || !gameState.suspects[submitIndex]) {
         return t('specifyAccusedSuspect', language);
@@ -571,8 +581,9 @@ Please reexamine the evidence and clues
       }
       
       return resultMessage;
+    }
 
-    case 'config':
+    case 'config': {
       if (args.length === 0) {
         // 显示当前配置
         const { apiConfig } = gameState;
@@ -594,31 +605,37 @@ ${apiConfig.key ? t('configuredApiKey', language) : t('unconfiguredApiKey', lang
         const value = configValue.join(' ');
         
         switch (configType) {
-          case 'url':
+          case 'url': {
             if (!value) return t('endpointCannotBeEmpty', language);
             updateApiConfig({ url: value });
             return t('endpointSet', language, { url: value });
+          }
             
-          case 'key':
+          case 'key': {
             if (!value) return t('keyCannotBeEmpty', language);
             updateApiConfig({ key: value });
             return t('keySet', language, { key: value.substring(0, 10) });
+          }
             
-          case 'model':
+          case 'model': {
             if (!value) return t('modelCannotBeEmpty', language);
             updateApiConfig({ model: value });
             return t('modelSet', language, { model: value });
+          }
             
           default:
             return t('unknownConfigItem', language, { item: configType });
         }
       }
+    }
 
-    case 'clear':
+    case 'clear': {
       return '\n'.repeat(50) + t('terminalCleared', language);
+    }
 
-    case 'exit':
+    case 'exit': {
       return t('thankYouMessage', language);
+    }
 
     default:
       return t('unknownCommand', language, { cmd });
