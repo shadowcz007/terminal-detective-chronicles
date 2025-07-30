@@ -10,6 +10,7 @@ import { Play, ArrowDown } from 'lucide-react';
 import ParticleBackground from '../components/ParticleBackground';
 import AnimatedTerminal from '../components/AnimatedTerminal';
 import CoreGameplay from '../components/CoreGameplay';
+import ExpandingLinesAnimation from '../components/ExpandingLinesAnimation';
 
 const GameGuide = () => {
   const { language, toggleLanguage } = useLanguage();
@@ -44,6 +45,11 @@ const GameGuide = () => {
         {/* Hero Section */}
         <section className="container mx-auto px-4 py-16 text-center">
           <div className="mb-8">
+            {/* Expanding Lines Animation */}
+            <div className="mb-12 flex justify-center">
+              <ExpandingLinesAnimation className="opacity-80" />
+            </div>
+            
             <h1 className="text-6xl md:text-8xl font-bold mb-4">
               <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-yellow-400 bg-clip-text text-transparent animate-pulse">
                 {t('gameTitle', language)}
