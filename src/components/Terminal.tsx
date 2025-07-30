@@ -11,6 +11,7 @@ import CrystalWiring from './ChronosUI/CrystalWiring';
 import GlitchOverlay from './ChronosUI/GlitchOverlay';
 import ParadoxMinigame from './ChronosUI/ParadoxMinigame';
 import CommandAutoComplete from './CommandAutoComplete';
+import { SuspectListUI } from './SuspectListUI';
 
 const Terminal = () => {
   const [input, setInput] = useState('');
@@ -28,6 +29,9 @@ const Terminal = () => {
   const [showAutoComplete, setShowAutoComplete] = useState(false);
   const [autoCompleteInput, setAutoCompleteInput] = useState('');
   const [justSelected, setJustSelected] = useState(false);
+  
+  // Suspect List UI state
+  const [showSuspectList, setShowSuspectList] = useState(false);
   
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -136,10 +140,19 @@ const Terminal = () => {
     const streamingCommands = ['new_case', 'interrogate', 'recreate'];
     const shouldStream = streamingCommands.some(cmd => command.toLowerCase().startsWith(cmd));
 
-    console.log(`🚀 [COMMAND START] Executing command: ${command}, shouldStream: ${shouldStream}, currentResponse cleared: ${currentResponse === ''}`);
+    // 检查是否是list_suspects命令
+    const isListSuspects = command.toLowerCase().trim() === 'list_suspects';
+
+    console.log(`🚀 [COMMAND START] Executing command: ${command}, shouldStream: ${shouldStream}, isListSuspects: ${isListSuspects}, currentResponse cleared: ${currentResponse === ''}`);
 
     try {
-      if (shouldStream && gameState.apiConfig.key) {
+      if (isListSuspects) {
+        // 显示嫌疑人名单UI
+        console.log(`👥 [SUSPECT LIST] Showing suspect list UI`);
+        setShowSuspectList(true);
+        setIsLoading(false);
+        return;
+      } else if (shouldStream && gameState.apiConfig.key) {
         setIsStreaming(true);
         console.log(`🌊 [STREAMING START] Starting streaming command: ${command}`);
         
@@ -182,7 +195,13 @@ const Terminal = () => {
         const result = await executeCommand(command, gameState, updateGameState, updateApiConfig, undefined, language);
         
         if (result && result.trim()) {
-          addToHistory(result);
+          // 检查是否是特殊响应
+          if (result === 'SHOW_SUSPECT_LIST_UI') {
+            console.log(`👥 [SUSPECT LIST] Showing suspect list UI from command result`);
+            setShowSuspectList(true);
+          } else {
+            addToHistory(result);
+          }
         }
         
         // 在案件生成后显示操作提示（非流式模式）
@@ -325,6 +344,14 @@ const Terminal = () => {
         <ParadoxMinigame
           onResolve={handleParadoxResolve}
           onClose={() => setShowParadox(false)}
+        />
+      )}
+
+      {showSuspectList && (
+        <SuspectListUI
+          suspects={gameState.suspects}
+          language={language}
+          onClose={() => setShowSuspectList(false)}
         />
       )}
 

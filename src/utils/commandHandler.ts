@@ -272,13 +272,8 @@ ${t('suspectsOverview', language)}`;
         return t('noActiveCase', language);
       }
       
-      let suspectList = `\n${t('suspectList', language)}\n`;
-      gameState.suspects.forEach((suspect, index) => {
-        suspectList += `[${index + 1}] ${suspect.name} - ${suspect.occupation}\n`;
-        suspectList += `    ${t('relationshipWithVictim', language)}: ${suspect.relationship}\n`;
-        suspectList += `    ${t('apparentMotive', language)}: ${suspect.motive.substring(0, 30)}...\n\n`;
-      });
-      return suspectList;
+      // 返回特殊标记，让Terminal组件知道要显示UI
+      return 'SHOW_SUSPECT_LIST_UI';
     }
 
     case 'evidence': {
