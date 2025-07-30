@@ -81,10 +81,20 @@ export const getInterrogationPrompt = (suspect: Suspect, gameState: GameState, l
   const environment = generateInterrogationEnvironment(language);
   const personalizedQuestions = generatePersonalizedQuestions(suspect, gameState, language);
   
+  // 获取凶手身份锁定信息
+  const { getCulpritLock, getCulpritConstraintPrompt } = require('../culpritLock');
+  const culpritLock = getCulpritLock(gameState.caseId);
+  const culpritConstraint = culpritLock ? getCulpritConstraintPrompt(culpritLock, language) : '';
+  
+  // 判断当前嫌疑人是否为真凶
+  const isRealCulprit = culpritLock && culpritLock.culpritId === suspect.id;
+  
   return language === 'zh' ?
     `【审讯记录 - 会话ID: ${sessionId}】
 时间戳: ${timestamp}
 第 ${interrogationCount} 次审问
+
+${culpritConstraint}
 
 案件背景：${gameState.caseDescription}
 受害者：${gameState.victim}
@@ -97,10 +107,24 @@ export const getInterrogationPrompt = (suspect: Suspect, gameState: GameState, l
 - 涉案动机：${suspect.motive}
 - 声称的不在场证明：${suspect.alibi}
 - 心理特征：${psychProfile}
+- 身份状态：${isRealCulprit ? '⚠️ 真凶' : '✓ 无辜嫌疑人'}
 
 角色扮演指导：
 你现在要扮演嫌疑人${suspect.name}，一个${suspect.occupation}。你的性格特征是：${psychProfile}。
-你对这起案件可能有所隐瞒，会根据自己的性格和处境来回答问题。
+${isRealCulprit ? 
+  `⚠️ 你是真正的凶手，必须：
+  - 隐瞒真相但不能完全否认所有指控
+  - 在压力下可能露出破绽或矛盾
+  - 表现出内疚、紧张或防御性的心理状态
+  - 试图转移话题或推卸责任
+  - 对关键证据表现出异常的反应` :
+  `✓ 你是无辜的，必须：
+  - 诚实回答问题，但可能对某些细节记忆模糊
+  - 表现出被冤枉的愤怒或困惑
+  - 主动提供可能有用的线索
+  - 对真凶的行为表示震惊或不理解
+  - 配合调查，希望尽快澄清真相`}
+
 你可能会：
 - 根据自己的心理特征表现出相应的情绪反应
 - 有选择性地透露信息
@@ -115,6 +139,8 @@ ${personalizedQuestions}
 Timestamp: ${timestamp}
 Interrogation #${interrogationCount}
 
+${culpritConstraint}
+
 Case Background: ${gameState.caseDescription}
 Victim: ${gameState.victim}
 Interrogation Environment: ${environment}
@@ -126,10 +152,24 @@ Subject Profile:
 - Suspected motive: ${suspect.motive}
 - Claimed alibi: ${suspect.alibi}
 - Psychological traits: ${psychProfile}
+- Identity Status: ${isRealCulprit ? '⚠️ Real Culprit' : '✓ Innocent Suspect'}
 
 Role-playing Instructions:
 You are now playing ${suspect.name}, a ${suspect.occupation}. Your personality traits are: ${psychProfile}.
-You may be hiding something about this case and will answer questions based on your character and situation.
+${isRealCulprit ? 
+  `⚠️ You are the real culprit and must:
+  - Hide the truth but cannot completely deny all accusations
+  - May show flaws or contradictions under pressure
+  - Display guilt, nervousness, or defensive psychological state
+  - Try to deflect topics or shift blame
+  - Show abnormal reactions to key evidence` :
+  `✓ You are innocent and must:
+  - Answer questions honestly, but may have fuzzy memory of some details
+  - Show anger or confusion at being wrongly accused
+  - Proactively provide potentially useful clues
+  - Express shock or incomprehension at the real culprit's actions
+  - Cooperate with investigation, hoping to clear your name quickly`}
+
 You might:
 - Show emotional reactions consistent with your psychological traits
 - Selectively reveal information
