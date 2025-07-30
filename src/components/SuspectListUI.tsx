@@ -37,7 +37,7 @@ export const SuspectListUI: React.FC<SuspectListUIProps> = ({ suspects, language
           <div className="scanline-overlay"></div>
           <div className="border-2 border-[#3a4c6f] p-4 grid-bg">
             <div className="flex justify-between items-center mb-4">
-              <div className="text-sm">BGONLINE.TC</div>
+              <div className="text-sm text-[#64f0ff]">BGONLINE.TC</div>
               <div className="flex space-x-2">
                 <div className="w-6 h-1 bg-[#3a4c6f]"></div>
                 <div className="w-6 h-1 bg-[#3a4c6f]"></div>
@@ -68,7 +68,7 @@ export const SuspectListUI: React.FC<SuspectListUIProps> = ({ suspects, language
         <div className="border-2 border-[#3a4c6f] p-4 grid-bg">
           {/* Header */}
           <div className="flex justify-between items-center mb-4">
-            <div className="text-sm">BGONLINE.TC</div>
+            <div className="text-sm text-[#64f0ff]">BGONLINE.TC</div>
             <div className="flex space-x-2">
               <div className="w-6 h-1 bg-[#3a4c6f]"></div>
               <div className="w-6 h-1 bg-[#3a4c6f]"></div>
@@ -115,25 +115,25 @@ export const SuspectListUI: React.FC<SuspectListUIProps> = ({ suspects, language
                 
                 {/* Suspect Info Grid */}
                 <div className="grid grid-cols-3 gap-2 text-xs text-center p-2">
-                  <div className="p-1 border border-[#3a4c6f]">ID: {suspect.id}</div>
-                  <div className="p-1 border border-[#3a4c6f]">STATUS <span className="text-yellow-500">ACTIVE</span></div>
-                  <div className="p-1 border border-[#3a4c6f]">PRIORITY <span className="text-red-500">HIGH</span></div>
+                  <div className="p-1 border border-[#3a4c6f] text-[#64f0ff]">ID: {suspect.id}</div>
+                  <div className="p-1 border border-[#3a4c6f] text-[#64f0ff]">STATUS <span className="text-yellow-500">ACTIVE</span></div>
+                  <div className="p-1 border border-[#3a4c6f] text-[#64f0ff]">PRIORITY <span className="text-red-500">HIGH</span></div>
                 </div>
                 
                 {/* Main Info */}
                 <div className="p-2 space-y-2">
                   <div className="info-box">
-                    <p className="text-xs text-gray-400">{t('occupation', language)}</p>
+                    <p className="text-xs text-[#64f0ff]">{t('occupation', language)}</p>
                     <p className="text-sm text-[#64f0ff]">{suspect.occupation}</p>
                   </div>
                   
                   <div className="grid grid-cols-1 gap-2">
                     <div className="info-box">
-                      <p className="text-xs text-gray-400">{t('relationship', language)}</p>
-                      <p className="text-sm">{suspect.relationship}</p>
+                      <p className="text-xs text-[#64f0ff]">{t('relationship', language)}</p>
+                      <p className="text-sm text-[#64f0ff]">{suspect.relationship}</p>
                     </div>
                     <div className="info-box">
-                      <p className="text-xs text-gray-400">{t('motive', language)}</p>
+                      <p className="text-xs text-[#64f0ff]">{t('motive', language)}</p>
                       <p className="text-sm text-red-400">{suspect.motive.substring(0, 50)}...</p>
                     </div>
                   </div>
@@ -141,7 +141,7 @@ export const SuspectListUI: React.FC<SuspectListUIProps> = ({ suspects, language
                   <div className="decorative-line w-full my-2"></div>
                   
                   <div className="info-box">
-                    <p className="text-xs text-gray-400">DNA FINGER PRINT</p>
+                    <p className="text-xs text-[#64f0ff]">DNA FINGER PRINT</p>
                     <div className="h-8 mt-1 border border-[#3a4c6f] bg-black bg-opacity-20 flex items-center justify-center">
                       <span className="text-red-500 text-xs">/////////////</span>
                     </div>
